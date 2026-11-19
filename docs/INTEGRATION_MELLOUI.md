@@ -43,3 +43,25 @@ Chaque calque doit pouvoir être activé/désactivé séparément, sans modifier
 6. Ajouter filtres, infobulles et éventuellement parcours.
 
 Les captures ne permettent pas de confirmer une API MelloUI pour ajouter une catégorie de calque. Cette fonctionnalité reste donc à investiguer.
+
+## Décision produit — deux modes de ressources (2026-11-19)
+
+### Mode « Ressources de base »
+- Disponible sans recette suivie, lorsque le calque LeatherTracker est activé.
+- Affichage automatique **filtré** des sources vérifiées de matériaux courants du Travail du cuir : cuirs (léger, moyen, lourd, épais, robuste), peaux et autres ressources confirmées dans la base de données du client.
+- Filtres par famille de matériau, zone et éventuellement niveau de créature / compétence de dépeçage lorsque vérifiés.
+- Ne pas confondre « automatique » et « tout afficher partout » : limiter le nombre de marqueurs, regrouper ceux qui se chevauchent et respecter les préférences utilisateur.
+- Les noms exacts, les objets existants et leurs sources doivent être validés dans les données WoW Forever avant publication.
+
+### Mode « Suivre cette recette »
+- Action explicite depuis la fenêtre du métier ; aucune recette n'est suivie automatiquement.
+- Afficher en priorité les sources vérifiées des composants de la recette suivie et, si demandé, les marchands correspondants.
+- Option « Matériaux manquants uniquement » ; si le nombre possédé est inconnu, afficher un état inconnu plutôt que zéro.
+- Masquer temporairement les ressources de base sans rapport avec la recette pour réduire l'encombrement, avec possibilité de les réactiver.
+- Exemple de test : recette 7955 « Ceinture en écailles de déviant », composants observés #6471 ×10, #6470 ×10, #2321 ×2 ; noms et inventaire encore à fiabiliser.
+
+### Comportements communs
+- Deux options indépendantes dans les calques : « Ressources de base » et « Recette suivie ».
+- Activer/désactiver sans perturber les repères d'autres addons.
+- Afficher uniquement des emplacements et marchands documentés ; aucune position ou disponibilité inventée.
+- Ces deux modes sont **spécifiés, pas encore implémentés**.
