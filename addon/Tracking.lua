@@ -124,7 +124,8 @@ SlashCmdList.LEATHERTRACKERPANEL = function()
   print("LeatherTracker : ouvrez la fenetre de metier.")
   return
  end
- bar:SetShown(not bar:IsShown())
+ settings.hiddenBar = bar:IsShown()
+ if settings.hiddenBar then bar:Hide() else bar:Show() end
  update()
 end
 
