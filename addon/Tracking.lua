@@ -1,9 +1,10 @@
--- LeatherTracker FR 0.2.0 - ForeverCore native profession side tab.
+-- LeatherTracker FR 0.2.1 - ForeverCore native profession side tab.
 -- Requires ForeverCore ProfessionTabs API minor >= 2.
 local addon = CreateFrame("Frame")
 local KEY = "leathertrackerfr"
 local page, detail, follow, basics, missing
 local db, registered, lastRecipe, elapsed = nil, false, nil, 0
+local selectedCache, selectedNameCache
 
 local function safe(fn, ...)
  if type(fn) ~= "function" then return nil end
@@ -18,7 +19,11 @@ local function currentRecipe()
  local crafting = frame.CraftingPage
  local form = crafting and crafting.SchematicForm
  local info = form and safe(form.GetRecipeInfo, form)
- if type(info) == "table" then return info.recipeID, info.name end
+ if type(info) == "table" and type(info.recipeID) == "number" then
+  selectedCache, selectedNameCache = info.recipeID, info.name
+  return info.recipeID, info.name
+ end
+ return selectedCache, selectedNameCache
 end
 
 local function recipeInfo(id)
@@ -78,6 +83,7 @@ local function refresh()
  lines[#lines+1] = "Ressources de base : "..(db.showBasics and "activees" or "masquees")
  detail:SetText(table.concat(lines, "\n"))
  follow:SetText(db.trackedRecipeID and "Arreter le suivi" or "Suivre la recette")
+ if follow.SetEnabled then follow:SetEnabled(db.trackedRecipeID ~= nil or selectedCache ~= nil) end
  basics:SetText(db.showBasics and "Bases : OUI" or "Bases : NON")
  missing:SetText(db.onlyMissing and "Manquants : OUI" or "Manquants : NON")
  lastRecipe = selected
@@ -100,28 +106,33 @@ local function register()
  if type(InCombatLockdown) == "function" and InCombatLockdown() then return end
  local frame = _G.ProfessionsFrame
  page = CreateFrame("Frame", "LeatherTrackerFRProfessionPage", frame)
- page:SetAllPoints(frame)
+ page:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -70)
+ page:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 35)
  page:Hide()
  local backdrop = page:CreateTexture(nil, "BACKGROUND")
- backdrop:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -80)
- backdrop:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 45)
+ backdrop:SetAllPoints(page)
  backdrop:SetColorTexture(0.055, 0.07, 0.095, 0.98)
  local accent = page:CreateTexture(nil, "BORDER")
- accent:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -82)
- accent:SetSize(480, 2)
+ accent:SetPoint("TOPLEFT", page, "TOPLEFT", 4, -4)
+ accent:SetPoint("TOPRIGHT", page, "TOPRIGHT", -4, -4)
+ accent:SetHeight(2)
  accent:SetColorTexture(0.76, 0.56, 0.20, 1)
  detail = page:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
- detail:SetPoint("TOPLEFT", frame, "TOPLEFT", 35, -110)
- detail:SetWidth(550)
+ detail:SetPoint("TOPLEFT", page, "TOPLEFT", 20, -35)
+ detail:SetPoint("RIGHT", page, "RIGHT", -20, 0)
  detail:SetJustifyH("LEFT")
  detail:SetJustifyV("TOP")
- follow = makeButton(page, "Suivre la recette", 165, 35, -445)
- basics = makeButton(page, "Bases : OUI", 120, 210, -445)
- missing = makeButton(page, "Manquants : OUI", 145, 340, -445)
+ follow = makeButton(page, "Suivre la recette", 165, 20, -360)
+ basics = makeButton(page, "Bases : OUI", 120, 195, -360)
+ missing = makeButton(page, "Manquants : OUI", 145, 325, -360)
  follow:SetScript("OnClick", function()
-  local id = currentRecipe()
-  if id and db.trackedRecipeID ~= id then db.trackedRecipeID = id
-  else db.trackedRecipeID = nil end
+  if db.trackedRecipeID then
+   db.trackedRecipeID = nil
+  else
+   local id = selectedCache
+   if id then db.trackedRecipeID = id
+   else print("LeatherTracker : choisissez d'abord une recette dans Fabrication.") end
+  end
   refresh()
  end)
  basics:SetScript("OnClick", function() db.showBasics = not db.showBasics; refresh() end)
@@ -160,7 +171,7 @@ end
 SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local tabs = _G.ForeverCore and _G.ForeverCore.ProfessionTabs
- print("LeatherTracker 0.2.0 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
+ print("LeatherTracker 0.2.1 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
   " | ForeverCore="..tostring(tabs ~= nil)..
   " | minor="..tostring(tabs and tabs.minor)..
   " | onglet="..tostring(registered))
@@ -188,8 +199,8 @@ addon:SetScript("OnUpdate", function(_, dt)
  if elapsed < 1 then return end
  elapsed = 0
  if not registered then register() end
- if registered and page and page:IsShown() then
+ if _G.ProfessionsFrame and _G.ProfessionsFrame:IsShown() then
   local id = currentRecipe()
-  if id ~= lastRecipe then refresh() end
+  if registered and page and page:IsShown() and id ~= lastRecipe then refresh() end
  end
 end)
