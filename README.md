@@ -1,7 +1,7 @@
 # LeatherTracker FR
 
 **French-language Leatherworking assistant for WoW Forever 1.60.1**  
-**Status:** experimental v0.2.0 on `develop`, not yet validated in-game; `main` unchanged.
+**Status:** experimental v0.2.1 on `develop`, not yet validated in-game; `main` unchanged.
 
 ## Goals
 
@@ -11,11 +11,11 @@ Help players read crafting recipes, compare ingredients with bag contents, find 
 
 User screenshots confirm that `/ltfr debug` detects the active profession window, `ProfessionsFrame.CraftingPage.SchematicForm`, and recipe ID **7955**. `/ltfr scan` identifies **Ceinture en écailles de déviant** and three reagent slots: item IDs **6471 ×10**, **6470 ×10**, **2321 ×2**.
 
-**Still unverified:** accurate bag counts, other recipes, changing/closing professions, and the v0.1.5 UI. User screenshots from v0.1.3 show resolved ingredient names and a working tracking panel.
+**Still unverified:** accurate bag counts, other recipes, changing/closing professions, and the v0.2.1 UI. User screenshots from v0.1.3 show resolved ingredient names and a working tracking panel.
 
 ## Profession-window integration (develop only)
 
-Version 0.2.0 registers a **real side tab** with `ForeverCore.ProfessionTabs.Register` (API minor >= 2), using the implementation verified in user-provided ForeverCore v1.15.2 and SkillUp Forever v1.14.4 archives. Requires installing and enabling ForeverCore separately. The tab opens a LeatherTracker page within `ProfessionsFrame`, and returning to native tabs restores the native page. `/ltpanel` toggles the page and `/ltstatus` reports compatibility. This is an experimental implementation **not yet tested in the WoW client**.
+Version 0.2.1 registers a **real side tab** with `ForeverCore.ProfessionTabs.Register` (API minor >= 2), using the implementation verified in user-provided ForeverCore v1.15.2 and SkillUp Forever v1.14.4 archives. Requires installing and enabling ForeverCore separately. The tab opens a LeatherTracker page within `ProfessionsFrame`, and returning to native tabs restores the native page. `/ltpanel` toggles the page and `/ltstatus` reports compatibility. This is an experimental implementation **not yet tested in the WoW client**.
 
 Known limitations: recipe selection may not remain available while the native crafting page is hidden; track a recipe before switching tabs. Source coordinates, MelloUI map layers, vendors and base-resource pins remain unimplemented. Test layout, secure frame behavior, navigation, and interaction with SkillUp before release.
 
@@ -29,7 +29,7 @@ Known limitations: recipe selection may not remain available while the native cr
 
 ## Accessibility and interface roadmap
 
-The intended final UX is a native-looking LeatherTracker tab inside the profession window, modeled on Auctionator's integration pattern, with one-window navigation and no required slash commands. The current version is an **experimental launcher + anchored panel**, not the final tab system. Validate the profession UI's tab API and conflicts before replacing its navigation. Map integration will show only verified skinning, loot and vendor sources, filtered by tracked recipe and optionally base leatherworking resources.
+The intended final UX is a native-looking LeatherTracker tab inside the profession window, modeled on Auctionator's integration pattern, with one-window navigation and no required slash commands. The current version uses the **ForeverCore profession side-tab API** and an embedded page, pending in-game validation. Validate the profession UI's tab API and conflicts before replacing its navigation. Map integration will show only verified skinning, loot and vendor sources, filtered by tracked recipe and optionally base leatherworking resources.
 
 ## Installation
 
@@ -51,3 +51,7 @@ Install and enable **ForeverCore v1.15.2** first. Copy `addon/LeatherTrackerFR.t
 Integration is planned, not yet implemented or approved. Data provenance, permissions, and versions must be checked. **Never commit API keys.** Attribution will follow applicable terms.
 
 No license has been selected yet; do not assume permission to redistribute code or third-party datasets.
+
+## Source data and MelloUI contract (planned, not populated)
+
+Every resource record must carry item ID, source type (skinning/loot/vendor), NPC ID/name, map ID, coordinates when verified, level and skinning requirement where applicable, drop-rate numerator/denominator or explicit unknown, and source URL/version. Never invent a rate or location. Map layer controls must filter by selected recipe and optionally by basic materials. MelloUI exposes `MelloUI.Map:AddPin(owner,key,uiMapID,x,y,spec)` and `ClearPins(owner)`; integration has not been coded. Recipe selection must be cached before switching away from Fabrication because ForeverCore hides native pages.
