@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.2.0 — develop, non validée en jeu
+- Remplacement du faux onglet par une page enregistrée via `ForeverCore.ProfessionTabs.Register` (minor >= 2).
+- Suppression du bouton positionné manuellement et du panneau externe.
+- Ajout d'un diagnostic `/ltstatus` et navigation de secours `/ltpanel`.
+- ForeverCore v1.15.2 nécessaire à l'onglet (installation distincte).
+- Code basé sur les fichiers `UI/ProfessionTabs.lua` de ForeverCore et `UI/Pages.lua` de SkillUp Forever fournis par l'utilisateur.
+- À tester : onglet, navigation, retour natif, comportement en combat, sélection et affichage des recettes.
+- MelloUI, marchands et emplacements de récolte : non implémentés.
+
+
 ## v0.1.5 — develop, à tester en jeu
 - Ajout d'un bouton « LeatherTracker » à la fenêtre `ProfessionsFrame`, ouvrant un panneau de détails rattaché à la fenêtre.
 - Affichage des composants, des quantités et des options de suivi dans le panneau.
