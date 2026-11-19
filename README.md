@@ -1,7 +1,7 @@
 # LeatherTracker FR
 
 **French-language Leatherworking assistant for WoW Forever 1.60.1**  
-**Status:** experimental v0.1.2 on `develop` (new UI **not yet tested in-game**); `main` remains v0.1.0.
+**Status:** experimental v0.1.5 on `develop` (not yet validated in-game); `main` remains v0.1.0.
 
 ## Goals
 
@@ -11,11 +11,13 @@ Help players read crafting recipes, compare ingredients with bag contents, find 
 
 User screenshots confirm that `/ltfr debug` detects the active profession window, `ProfessionsFrame.CraftingPage.SchematicForm`, and recipe ID **7955**. `/ltfr scan` identifies **Ceinture en écailles de déviant** and three reagent slots: item IDs **6471 ×10**, **6470 ×10**, **2321 ×2**.
 
-**Still unverified:** resolved item names (currently displayed as `Objet #ID`), bag counts (all zero in the screenshot), refresh after bag changes, other recipes, and switching/closing professions. The screenshot does not prove correct inventory counting.
+**Still unverified:** accurate bag counts, other recipes, changing/closing professions, and the v0.1.5 UI. User screenshots from v0.1.3 show resolved ingredient names and a working tracking panel.
 
-## Experimental tracking panel (develop only)
+## Profession-window integration (develop only)
 
-The panel is created by `addon/Tracking.lua`, loaded after `Main.lua`. Its options are saved via `LeatherTrackerFRDB`. The **Bases** toggle only changes the UI setting: **it does not yet draw basic leather/hide sources**. Tracking a recipe similarly does not yet create MelloUI pins. A future verified location dataset and map-layer API integration are required.
+Version 0.1.5 adds a **LeatherTracker launcher button** on `ProfessionsFrame` and a profession-anchored details panel inspired by Auctionator's workflow. It is **not yet a native WoW tab** and does **not replace the profession's CraftingPage**. The button toggles the panel; `/ltpanel` is a fallback. The panel starts hidden, and the preference is stored in `LeatherTrackerFRDB`. It displays the selected or tracked recipe and ingredients where available.
+
+**Known limitations:** the panel is attached outside the right edge of the profession frame and may extend beyond the screen; its position and click behavior must be tested. The map, vendors, and base-resource source data are not implemented. `Bases` and `Manquants` control display preferences, not MelloUI layers.
 
 ## Commands (temporary diagnostic interface)
 
@@ -27,11 +29,11 @@ The panel is created by `addon/Tracking.lua`, loaded after `Main.lua`. Its optio
 
 ## Accessibility and interface roadmap
 
-**Slash commands are for testing, not the intended user experience.** The experimental v0.1.2 adds a clickable **LeatherTracker** button on the profession window and a separate panel with **Suivre la recette**, **Bases** and **Manquants** toggles. This integration is not yet validated in-game; the map still has no markers or source database. It should show localized ingredient names, required/owned/missing counts, clear status indicators, and later verified sources and map navigation. Design for readable text, keyboard support where feasible, and no required command memorization. Full native integration, verified map markers, and accessibility validation are **not implemented yet**.
+The intended final UX is a native-looking LeatherTracker tab inside the profession window, modeled on Auctionator's integration pattern, with one-window navigation and no required slash commands. The current version is an **experimental launcher + anchored panel**, not the final tab system. Validate the profession UI's tab API and conflicts before replacing its navigation. Map integration will show only verified skinning, loot and vendor sources, filtered by tracked recipe and optionally base leatherworking resources.
 
 ## Installation
 
-Copy `addon/LeatherTrackerFR.toc` and `addon/Main.lua` into `Interface/AddOns/LeatherTrackerFR/` in the WoW Forever installation. Enable the addon. See [French user guide](docs/Guide_utilisateur_v0.2.docx).
+Copy `addon/LeatherTrackerFR.toc`, `addon/Main.lua` and `addon/Tracking.lua` into `Interface/AddOns/LeatherTrackerFR/` in the WoW Forever installation. Enable the addon. See [French user guide](docs/Guide_utilisateur_v0.2.docx).
 
 ## Documentation
 
