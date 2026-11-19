@@ -1,8 +1,12 @@
--- LeatherTracker FR 0.2.1 - ForeverCore native profession side tab.
+-- LeatherTracker FR 0.2.2 - ForeverCore native profession side tab.
 -- Requires ForeverCore ProfessionTabs API minor >= 2.
 local addon = CreateFrame("Frame")
 local KEY = "leathertrackerfr"
-local page, detail, follow, basics, missing
+local page, detail, follow, basics, missing, header, subtitle, sectionButtons = nil, nil, nil, nil, nil, nil, nil, {}
+local currentSection = "recipe"
+local sectionNames = {recipe="Suivi de recette",materials="Materiaux",sources="Sources et zones",map="Carte MelloUI"}
+local sectionOrder = {"recipe","materials","sources","map"}
+local lines = {}
 local db, registered, lastRecipe, elapsed = nil, false, nil, 0
 local selectedCache, selectedNameCache
 
@@ -47,46 +51,66 @@ local function refresh()
  if not page or not db then return end
  local selected, selectedName = currentRecipe()
  local id = db.trackedRecipeID or selected
- local lines = {"|cffffd100LEATHERTRACKER FR|r", " "}
- if not id then
-  lines[#lines+1] = "Selectionnez une recette dans la page Fabrication."
- else
-  local info = recipeInfo(id)
-  local name = type(info) == "table" and info.name or selectedName or ("Recette #"..id)
-  lines[#lines+1] = "|cffffd100RECETTE|r"
-  lines[#lines+1] = name
-  lines[#lines+1] = db.trackedRecipeID and "Suivi actif" or "Apercu de la selection"
-  lines[#lines+1] = " "
-  local schematic = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeSchematic, id, false)
-  lines[#lines+1] = "|cffffd100COMPOSANTS|r"
-  local found = false
-  if type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
-   for _, slot in ipairs(schematic.reagentSlotSchematics) do
-    local reagent = type(slot.reagents) == "table" and slot.reagents[1]
-    local itemID = reagent and reagent.itemID
-    local required = tonumber(slot.quantityRequired) or 0
-    if itemID and required > 0 then
-     local owned = itemCount(itemID)
-     local deficit = owned and math.max(0, required - owned) or nil
-     if not db.onlyMissing or not deficit or deficit > 0 then
-      lines[#lines+1] = itemName(itemID).." : "..(owned or "?").." / "..required
+ local info = id and recipeInfo(id)
+ local recipeName = (type(info) == "table" and info.name) or selectedName or (id and ("Recette #"..id))
+ header:SetText(sectionNames[currentSection])
+ subtitle:SetText(recipeName and (recipeName .. (db.trackedRecipeID and "  |cff88ff88(Suivi actif)|r" or "  |cffcccccc(Apercu)|r")) or "Selectionnez une recette dans Fabrication.")
+ for _, label in ipairs(lines) do label:Hide() end
+ local n=0
+ local function add(text)
+  n=n+1
+  if n>8 then return end
+  local label=lines[n]
+  if not label then
+   label=page:CreateFontString(nil,"OVERLAY","GameFontHighlight")
+   label:SetPoint("TOPLEFT",page,"TOPLEFT",35,-170-(n-1)*34)
+   label:SetWidth(730)
+   label:SetJustifyH("LEFT")
+   lines[n]=label
+  end
+  label:SetText(text)
+  label:Show()
+ end
+ if currentSection=="recipe" or currentSection=="materials" then
+  local schematic = id and C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeSchematic,id,false)
+  local slots=type(schematic)=="table" and schematic.reagentSlotSchematics
+  local found=false
+  if type(slots)=="table" then
+   for _, slot in ipairs(slots) do
+    local reagent=type(slot.reagents)=="table" and slot.reagents[1]
+    local itemID=reagent and reagent.itemID
+    local required=tonumber(slot.quantityRequired)
+    if itemID and required and required>0 then
+     found=true
+     local owned=itemCount(itemID)
+     local deficit=owned and math.max(0,required-owned) or nil
+     if not db.onlyMissing or deficit==nil or deficit>0 then
+      add(itemName(itemID).."  |  "..(owned or "?").." / "..required..
+       (deficit and ("  |  manquant : "..deficit) or ""))
      end
-     found = true
     end
    end
   end
-  if not found then lines[#lines+1] = "Informations des composants indisponibles." end
+  if not found then add("Composants indisponibles : selectionnez une recette dans Fabrication.") end
+ elseif currentSection=="sources" then
+  add("Creatures, marchands, zones et taux de butin")
+  add("Aucune base de sources verifiee n'a encore ete importee.")
+  add("Les taux inconnus ne sont pas inventes.")
+ elseif currentSection=="map" then
+  local m=_G.MelloUI and _G.MelloUI.Map
+  add("MelloUI Map : "..(m and "API detectee" or "non detectee"))
+  add("Aucun point de recolte verifie importe.")
+  add("Les futurs reperes seront filtres par recette suivie.")
+  add("Materiaux de base : "..(db.showBasics and "affiches" or "masques"))
  end
- lines[#lines+1] = " "
- lines[#lines+1] = "|cffffd100CARTE MELLOUI|r"
- lines[#lines+1] = "Aucun emplacement verifie importe."
- lines[#lines+1] = "Ressources de base : "..(db.showBasics and "activees" or "masquees")
- detail:SetText(table.concat(lines, "\n"))
+ for _, section in ipairs(sectionOrder) do
+  if sectionButtons[section] then sectionButtons[section]:SetText((section==currentSection and "[ " or "")..sectionNames[section]..(section==currentSection and " ]" or "")) end
+ end
  follow:SetText(db.trackedRecipeID and "Arreter le suivi" or "Suivre la recette")
- if follow.SetEnabled then follow:SetEnabled(db.trackedRecipeID ~= nil or selectedCache ~= nil) end
+ follow:SetEnabled(db.trackedRecipeID~=nil or selectedCache~=nil)
  basics:SetText(db.showBasics and "Bases : OUI" or "Bases : NON")
  missing:SetText(db.onlyMissing and "Manquants : OUI" or "Manquants : NON")
- lastRecipe = selected
+ lastRecipe=selected
 end
 
 local function makeButton(parent, text, width, x, y)
@@ -109,22 +133,31 @@ local function register()
  page:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -70)
  page:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 35)
  page:Hide()
- local backdrop = page:CreateTexture(nil, "BACKGROUND")
- backdrop:SetAllPoints(page)
- backdrop:SetColorTexture(0.055, 0.07, 0.095, 0.98)
- local accent = page:CreateTexture(nil, "BORDER")
- accent:SetPoint("TOPLEFT", page, "TOPLEFT", 4, -4)
- accent:SetPoint("TOPRIGHT", page, "TOPRIGHT", -4, -4)
+ local backdrop=page:CreateTexture(nil,"BACKGROUND")
+ backdrop:SetPoint("TOPLEFT",p,"TOPLEFT",12,-76)
+ backdrop:SetPoint("BOTTOMRIGHT",p,"BOTTOMRIGHT",-12,42)
+ backdrop:SetColorTexture(0.075,0.07,0.065,0.97)
+ local accent=page:CreateTexture(nil,"BORDER")
+ accent:SetPoint("TOPLEFT",p,"TOPLEFT",28,-120)
+ accent:SetPoint("TOPRIGHT",p,"TOPRIGHT",-28,-120)
  accent:SetHeight(2)
- accent:SetColorTexture(0.76, 0.56, 0.20, 1)
- detail = page:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
- detail:SetPoint("TOPLEFT", page, "TOPLEFT", 20, -35)
- detail:SetPoint("RIGHT", page, "RIGHT", -20, 0)
- detail:SetJustifyH("LEFT")
- detail:SetJustifyV("TOP")
- follow = makeButton(page, "Suivre la recette", 165, 20, -360)
- basics = makeButton(page, "Bases : OUI", 120, 195, -360)
- missing = makeButton(page, "Manquants : OUI", 145, 325, -360)
+ accent:SetColorTexture(0.7,0.47,0.17,1)
+ header=page:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+ header:SetPoint("TOPLEFT",p,"TOPLEFT",30,-90)
+ subtitle=page:CreateFontString(nil,"OVERLAY","GameFontHighlight")
+ subtitle:SetPoint("TOPLEFT",p,"TOPLEFT",30,-133)
+ subtitle:SetWidth(740)
+ subtitle:SetJustifyH("LEFT")
+ local widths={150,112,140,128}
+ local offsets={30,186,304,450}
+ for i,section in ipairs(sectionOrder) do
+  local b=makeButton(page,sectionNames[section],widths[i],offsets[i],-410)
+  b:SetScript("OnClick",function() currentSection=section;refresh() end)
+  sectionButtons[section]=b
+ end
+ follow=makeButton(page,"Suivre la recette",170,30,-455)
+ basics=makeButton(page,"Bases : OUI",125,208,-455)
+ missing=makeButton(page,"Manquants : OUI",150,340,-455)
  follow:SetScript("OnClick", function()
   if db.trackedRecipeID then
    db.trackedRecipeID = nil
@@ -141,6 +174,7 @@ local function register()
  local ok, err = pcall(tabs.Register, KEY, {
   icon = "Interface\\Icons\\INV_Misc_LeatherScrap_02",
   tooltip = "LeatherTracker FR",
+  minWidth = 850,
   page = page,
   onSelect = refresh,
  })
@@ -171,7 +205,7 @@ end
 SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local tabs = _G.ForeverCore and _G.ForeverCore.ProfessionTabs
- print("LeatherTracker 0.2.1 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
+ print("LeatherTracker 0.2.2 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
   " | ForeverCore="..tostring(tabs ~= nil)..
   " | minor="..tostring(tabs and tabs.minor)..
   " | onglet="..tostring(registered))
