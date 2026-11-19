@@ -1,4 +1,4 @@
--- LeatherTracker FR 0.2.2 - ForeverCore native profession side tab.
+-- LeatherTracker FR 0.2.3 - ForeverCore native profession side tab.
 -- Requires ForeverCore ProfessionTabs API minor >= 2.
 local addon = CreateFrame("Frame")
 local KEY = "leathertrackerfr"
@@ -133,19 +133,20 @@ local function register()
  page:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -70)
  page:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -10, 35)
  page:Hide()
+ page:EnableMouse(false)
  local backdrop=page:CreateTexture(nil,"BACKGROUND")
- backdrop:SetPoint("TOPLEFT",p,"TOPLEFT",12,-76)
- backdrop:SetPoint("BOTTOMRIGHT",p,"BOTTOMRIGHT",-12,42)
+ backdrop:SetPoint("TOPLEFT",page,"TOPLEFT",12,-76)
+ backdrop:SetPoint("BOTTOMRIGHT",page,"BOTTOMRIGHT",-12,42)
  backdrop:SetColorTexture(0.075,0.07,0.065,0.97)
  local accent=page:CreateTexture(nil,"BORDER")
- accent:SetPoint("TOPLEFT",p,"TOPLEFT",28,-120)
- accent:SetPoint("TOPRIGHT",p,"TOPRIGHT",-28,-120)
+ accent:SetPoint("TOPLEFT",page,"TOPLEFT",28,-120)
+ accent:SetPoint("TOPRIGHT",page,"TOPRIGHT",-28,-120)
  accent:SetHeight(2)
  accent:SetColorTexture(0.7,0.47,0.17,1)
  header=page:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
- header:SetPoint("TOPLEFT",p,"TOPLEFT",30,-90)
+ header:SetPoint("TOPLEFT",page,"TOPLEFT",30,-90)
  subtitle=page:CreateFontString(nil,"OVERLAY","GameFontHighlight")
- subtitle:SetPoint("TOPLEFT",p,"TOPLEFT",30,-133)
+ subtitle:SetPoint("TOPLEFT",page,"TOPLEFT",30,-133)
  subtitle:SetWidth(740)
  subtitle:SetJustifyH("LEFT")
  local widths={150,112,140,128}
@@ -174,7 +175,6 @@ local function register()
  local ok, err = pcall(tabs.Register, KEY, {
   icon = "Interface\\Icons\\INV_Misc_LeatherScrap_02",
   tooltip = "LeatherTracker FR",
-  minWidth = 850,
   page = page,
   onSelect = refresh,
  })
@@ -184,9 +184,6 @@ local function register()
   return
  end
  registered = true
- frame:HookScript("OnHide", function()
-  if tabs.Selected and tabs.Selected() == KEY and tabs.ShowNative then tabs.ShowNative() end
- end)
  print("LeatherTracker : onglet metier enregistre.")
 end
 
@@ -205,7 +202,7 @@ end
 SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local tabs = _G.ForeverCore and _G.ForeverCore.ProfessionTabs
- print("LeatherTracker 0.2.2 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
+ print("LeatherTracker 0.2.3 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
   " | ForeverCore="..tostring(tabs ~= nil)..
   " | minor="..tostring(tabs and tabs.minor)..
   " | onglet="..tostring(registered))
