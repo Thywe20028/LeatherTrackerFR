@@ -1,8 +1,9 @@
--- LeatherTracker FR 0.1.5: extension non destructive de la fenetre Professions.
--- Pas de marqueurs MelloUI tant que les sources ne sont pas verifiees.
+-- LeatherTracker FR 0.2.0 - ForeverCore native profession side tab.
+-- Requires ForeverCore ProfessionTabs API minor >= 2.
 local addon = CreateFrame("Frame")
-local settings, bar, title, follow, basics, missing, status, tab, detail
-local lastSelected, elapsed = nil, 0
+local KEY = "leathertrackerfr"
+local page, detail, follow, basics, missing
+local db, registered, lastRecipe, elapsed = nil, false, nil, 0
 
 local function safe(fn, ...)
  if type(fn) ~= "function" then return nil end
@@ -11,170 +12,158 @@ local function safe(fn, ...)
  return nil
 end
 
-local function selectedRecipe()
- local p = _G.ProfessionsFrame
- if not p or not p.IsShown or not p:IsShown() then return nil end
- local page = p.CraftingPage
- local form = page and (page.SchematicForm or (page.Schematic and page.Schematic.SchematicForm))
+local function currentRecipe()
+ local frame = _G.ProfessionsFrame
+ if not frame then return nil end
+ local crafting = frame.CraftingPage
+ local form = crafting and crafting.SchematicForm
  local info = form and safe(form.GetRecipeInfo, form)
- if type(info) == "table" and type(info.recipeID) == "number" then
-  return info.recipeID, info.name
- end
- return nil
+ if type(info) == "table" then return info.recipeID, info.name end
 end
 
-local function button(parent, label, width)
- local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
- b:SetSize(width, 23)
- b:SetText(label)
- return b
+local function recipeInfo(id)
+ if not id or not C_TradeSkillUI then return nil end
+ return safe(C_TradeSkillUI.GetRecipeInfo, id)
 end
 
-local function update()
- if not settings or not bar then return end
- local id, name = selectedRecipe()
- local tracked = settings.trackedRecipeID
- title:SetText("|cffffd100LeatherTracker|r")
- if tracked then
-  local info = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeInfo, tracked)
-  local recipeName = type(info) == "table" and info.name or name
-  status:SetText("|cff9bdcaeSuivie :|r "..(recipeName or ("#"..tracked)))
- elseif id then
-  status:SetText("Recette selectionnee : "..(name or ("#"..id)))
+local function itemName(id)
+ local name = C_Item and safe(C_Item.GetItemInfo, id)
+ if not name then name = safe(_G.GetItemInfo, id) end
+ return type(name) == "string" and name or ("Objet #"..id)
+end
+
+local function itemCount(id)
+ local count = C_Item and safe(C_Item.GetItemCount, id, false)
+ if type(count) ~= "number" then count = safe(_G.GetItemCount, id, false) end
+ return type(count) == "number" and count or nil
+end
+
+local function refresh()
+ if not page or not db then return end
+ local selected, selectedName = currentRecipe()
+ local id = db.trackedRecipeID or selected
+ local lines = {"|cffffd100LEATHERTRACKER FR|r", " "}
+ if not id then
+  lines[#lines+1] = "Selectionnez une recette dans la page Fabrication."
  else
-  status:SetText("Choisissez une recette.")
- end
- if follow.SetEnabled then follow:SetEnabled(id ~= nil or tracked ~= nil) end
- follow:SetText(tracked and tracked == id and "Arreter le suivi" or "Suivre la recette")
- basics:SetText(settings.showBasics and "Bases : OUI" or "Bases : NON")
- missing:SetText(settings.onlyMissing and "Manquants : OUI" or "Manquants : NON")
- if detail then
-  local activeID = tracked or id
-  if activeID then
-   local recipe = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeInfo, activeID)
-   local schematic = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeSchematic, activeID, false)
-   local recipeName = type(recipe) == "table" and recipe.name or name or ("#"..activeID)
-   local lines = {"|cffffd100RECETTE|r", recipeName, " "}
-   if type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
-    lines[#lines+1] = "|cffffd100COMPOSANTS|r"
-    for _,slot in ipairs(schematic.reagentSlotSchematics) do
-     local reagent = type(slot.reagents) == "table" and slot.reagents[1]
-     local itemID = reagent and reagent.itemID
-     local required = tonumber(slot.quantityRequired) or 0
-     if itemID and required > 0 then
-      local item = C_Item and safe(C_Item.GetItemInfo, itemID)
-      if not item then item = safe(_G.GetItemInfo, itemID) end
-      local owned = C_Item and safe(C_Item.GetItemCount, itemID, false)
-      if type(owned) ~= "number" then owned = safe(_G.GetItemCount, itemID, false) end
-      local missingCount = type(owned) == "number" and math.max(0, required-owned) or nil
-      if not settings.onlyMissing or missingCount == nil or missingCount > 0 then
-       lines[#lines+1] = (item or ("Objet #"..itemID)).." : "..(owned or "?").."/"..required
-      end
+  local info = recipeInfo(id)
+  local name = type(info) == "table" and info.name or selectedName or ("Recette #"..id)
+  lines[#lines+1] = "|cffffd100RECETTE|r"
+  lines[#lines+1] = name
+  lines[#lines+1] = db.trackedRecipeID and "Suivi actif" or "Apercu de la selection"
+  lines[#lines+1] = " "
+  local schematic = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeSchematic, id, false)
+  lines[#lines+1] = "|cffffd100COMPOSANTS|r"
+  local found = false
+  if type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
+   for _, slot in ipairs(schematic.reagentSlotSchematics) do
+    local reagent = type(slot.reagents) == "table" and slot.reagents[1]
+    local itemID = reagent and reagent.itemID
+    local required = tonumber(slot.quantityRequired) or 0
+    if itemID and required > 0 then
+     local owned = itemCount(itemID)
+     local deficit = owned and math.max(0, required - owned) or nil
+     if not db.onlyMissing or not deficit or deficit > 0 then
+      lines[#lines+1] = itemName(itemID).." : "..(owned or "?").." / "..required
      end
+     found = true
     end
-   else lines[#lines+1] = "Composants indisponibles." end
-   lines[#lines+1] = " "
-   lines[#lines+1] = "|cffffd100CARTE|r"
-   lines[#lines+1] = "Emplacements verifies non encore importes."
-   lines[#lines+1] = settings.showBasics and "Ressources de base : activees" or "Ressources de base : masquees"
-   detail:SetText(table.concat(lines, "\n"))
-  else
-   detail:SetText("Selectionnez une recette dans Travail du cuir.")
+   end
   end
+  if not found then lines[#lines+1] = "Informations des composants indisponibles." end
  end
- lastSelected = id
+ lines[#lines+1] = " "
+ lines[#lines+1] = "|cffffd100CARTE MELLOUI|r"
+ lines[#lines+1] = "Aucun emplacement verifie importe."
+ lines[#lines+1] = "Ressources de base : "..(db.showBasics and "activees" or "masquees")
+ detail:SetText(table.concat(lines, "\n"))
+ follow:SetText(db.trackedRecipeID and "Arreter le suivi" or "Suivre la recette")
+ basics:SetText(db.showBasics and "Bases : OUI" or "Bases : NON")
+ missing:SetText(db.onlyMissing and "Manquants : OUI" or "Manquants : NON")
+ lastRecipe = selected
 end
 
-local function makeBar()
- local p = _G.ProfessionsFrame
- if not p or bar then return end
- -- Enfant de la fenetre native : disparait automatiquement avec elle.
- bar = CreateFrame("Frame", "LeatherTrackerFRBar", p)
- bar:SetSize(390, 300)
- bar:SetPoint("TOPLEFT", p, "TOPRIGHT", 5, -38)
- bar:SetFrameStrata("DIALOG")
- bar:SetFrameLevel(p:GetFrameLevel()+8)
- local bg = bar:CreateTexture(nil, "BACKGROUND")
- bg:SetAllPoints()
- bg:SetColorTexture(0.055, 0.075, 0.11, 0.94)
- local line = bar:CreateTexture(nil, "BORDER")
- line:SetPoint("TOPLEFT", 0, 0)
- line:SetPoint("TOPRIGHT", 0, 0)
- line:SetHeight(2)
- line:SetColorTexture(0.78, 0.59, 0.22, 1)
- title = bar:CreateFontString(nil, "OVERLAY", "GameFontNormal")
- title:SetPoint("TOPLEFT", 9, -8)
- status = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
- status:SetPoint("TOPRIGHT", -9, -30)
- status:SetWidth(235)
- status:SetJustifyH("RIGHT")
- follow = button(bar, "Suivre la recette", 145)
- follow:SetPoint("TOPLEFT", 8, -62)
- basics = button(bar, "Bases : OUI", 100)
- basics:SetPoint("TOPLEFT", 8, -91)
- missing = button(bar, "Manquants : OUI", 117)
- missing:SetPoint("LEFT", basics, "RIGHT", 5, 0)
- follow:SetScript("OnClick", function()
-  local id = selectedRecipe()
-  if id and settings.trackedRecipeID ~= id then
-   settings.trackedRecipeID = id
-  else
-   settings.trackedRecipeID = nil
-  end
-  update()
- end)
- basics:SetScript("OnClick", function()
-  settings.showBasics = not settings.showBasics
-  update()
- end)
- missing:SetScript("OnClick", function()
-  settings.onlyMissing = not settings.onlyMissing
-  update()
- end)
- detail = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
- detail:SetPoint("TOPLEFT", 12, -130)
- detail:SetWidth(365)
+local function makeButton(parent, text, width, x, y)
+ local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+ button:SetSize(width, 25)
+ button:SetPoint("TOPLEFT", x, y)
+ button:SetText(text)
+ return button
+end
+
+local function register()
+ if registered or not db or not _G.ProfessionsFrame then return end
+ local core = _G.ForeverCore
+ local tabs = core and core.ProfessionTabs
+ if type(tabs) ~= "table" or type(tabs.Register) ~= "function" or
+    (tonumber(tabs.minor) or 0) < 2 then return end
+ if type(InCombatLockdown) == "function" and InCombatLockdown() then return end
+ local frame = _G.ProfessionsFrame
+ page = CreateFrame("Frame", "LeatherTrackerFRProfessionPage", frame)
+ page:SetAllPoints(frame)
+ page:Hide()
+ local backdrop = page:CreateTexture(nil, "BACKGROUND")
+ backdrop:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -80)
+ backdrop:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 45)
+ backdrop:SetColorTexture(0.055, 0.07, 0.095, 0.98)
+ local accent = page:CreateTexture(nil, "BORDER")
+ accent:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -82)
+ accent:SetSize(480, 2)
+ accent:SetColorTexture(0.76, 0.56, 0.20, 1)
+ detail = page:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+ detail:SetPoint("TOPLEFT", frame, "TOPLEFT", 35, -110)
+ detail:SetWidth(550)
  detail:SetJustifyH("LEFT")
  detail:SetJustifyV("TOP")
- tab = button(p, "LeatherTracker", 124)
- tab:SetPoint("TOPRIGHT", p, "TOPRIGHT", -48, -40)
- tab:SetFrameLevel(p:GetFrameLevel()+12)
- tab:SetScript("OnClick", function()
-  settings.hiddenBar = bar:IsShown()
-  if settings.hiddenBar then bar:Hide() else bar:Show() end
-  update()
+ follow = makeButton(page, "Suivre la recette", 165, 35, -445)
+ basics = makeButton(page, "Bases : OUI", 120, 210, -445)
+ missing = makeButton(page, "Manquants : OUI", 145, 340, -445)
+ follow:SetScript("OnClick", function()
+  local id = currentRecipe()
+  if id and db.trackedRecipeID ~= id then db.trackedRecipeID = id
+  else db.trackedRecipeID = nil end
+  refresh()
  end)
- bar:Hide()
- update()
-end
-
-local function initialize()
- if settings then return end
- LeatherTrackerFRDB = type(LeatherTrackerFRDB) == "table" and LeatherTrackerFRDB or {}
- settings = LeatherTrackerFRDB
- if type(settings.showBasics) ~= "boolean" then settings.showBasics = true end
- if type(settings.onlyMissing) ~= "boolean" then settings.onlyMissing = true end
- if type(settings.trackedRecipeID) ~= "number" then settings.trackedRecipeID = nil end
- if type(settings.hiddenBar) ~= "boolean" then settings.hiddenBar = true end
- makeBar()
+ basics:SetScript("OnClick", function() db.showBasics = not db.showBasics; refresh() end)
+ missing:SetScript("OnClick", function() db.onlyMissing = not db.onlyMissing; refresh() end)
+ page:SetScript("OnShow", refresh)
+ local ok, err = pcall(tabs.Register, KEY, {
+  icon = "Interface\\Icons\\INV_Misc_LeatherScrap_02",
+  tooltip = "LeatherTracker FR",
+  page = page,
+  onSelect = refresh,
+ })
+ if not ok then
+  page:Hide()
+  print("LeatherTracker : impossible de creer l'onglet : "..tostring(err))
+  return
+ end
+ registered = true
+ frame:HookScript("OnHide", function()
+  if tabs.Selected and tabs.Selected() == KEY and tabs.ShowNative then tabs.ShowNative() end
+ end)
+ print("LeatherTracker : onglet metier enregistre.")
 end
 
 SLASH_LEATHERTRACKERPANEL1 = "/ltpanel"
 SlashCmdList.LEATHERTRACKERPANEL = function()
- if not settings then initialize() end
- makeBar()
- if not bar then
-  print("LeatherTracker : ouvrez Travail du cuir.")
+ register()
+ if not registered then
+  print("LeatherTracker : ouvrez un metier et verifiez ForeverCore v1.15.2.")
   return
  end
- local p = _G.ProfessionsFrame
- if not p:IsShown() then
-  print("LeatherTracker : ouvrez la fenetre de metier.")
-  return
- end
- settings.hiddenBar = bar:IsShown()
- if settings.hiddenBar then bar:Hide() else bar:Show() end
- update()
+ local tabs = _G.ForeverCore.ProfessionTabs
+ if tabs.Selected and tabs.Selected() == KEY then tabs.ShowNative()
+ else tabs.Select(KEY) end
+end
+
+SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
+SlashCmdList.LEATHERTRACKERSTATUS = function()
+ local tabs = _G.ForeverCore and _G.ForeverCore.ProfessionTabs
+ print("LeatherTracker 0.2.0 | ProfessionsFrame="..tostring(_G.ProfessionsFrame ~= nil)..
+  " | ForeverCore="..tostring(tabs ~= nil)..
+  " | minor="..tostring(tabs and tabs.minor)..
+  " | onglet="..tostring(registered))
 end
 
 addon:RegisterEvent("PLAYER_LOGIN")
@@ -182,24 +171,25 @@ addon:RegisterEvent("ADDON_LOADED")
 addon:RegisterEvent("BAG_UPDATE_DELAYED")
 addon:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 addon:SetScript("OnEvent", function(_, event)
- if event == "PLAYER_LOGIN" then initialize()
+ if event == "PLAYER_LOGIN" then
+  LeatherTrackerFRDB = type(LeatherTrackerFRDB) == "table" and LeatherTrackerFRDB or {}
+  db = LeatherTrackerFRDB
+  if type(db.showBasics) ~= "boolean" then db.showBasics = true end
+  if type(db.onlyMissing) ~= "boolean" then db.onlyMissing = true end
+  register()
  elseif event == "ADDON_LOADED" then
-  if settings then makeBar() end
- elseif settings then update() end
+  if db then register() end
+ else
+  if page and page:IsShown() then refresh() end
+ end
 end)
 addon:SetScript("OnUpdate", function(_, dt)
  elapsed = elapsed + dt
- if elapsed < 0.5 then return end
+ if elapsed < 1 then return end
  elapsed = 0
- if not settings then return end
- makeBar()
- if not bar then return end
- local p = _G.ProfessionsFrame
- if p and p:IsShown() then
-  if not settings.hiddenBar and not bar:IsShown() then bar:Show() end
-  local id = selectedRecipe()
-  if id ~= lastSelected then update() end
- else
-  bar:Hide()
+ if not registered then register() end
+ if registered and page and page:IsShown() then
+  local id = currentRecipe()
+  if id ~= lastRecipe then refresh() end
  end
 end)
