@@ -1,7 +1,7 @@
 # LeatherTracker FR
 
 **French-language Leatherworking assistant for WoW Forever 1.60.1**  
-**Status:** experimental v0.1.1 on `develop` (partially validated in-game); `main` remains v0.1.0.
+**Status:** experimental v0.1.2 on `develop` (new UI **not yet tested in-game**); `main` remains v0.1.0.
 
 ## Goals
 
@@ -13,6 +13,10 @@ User screenshots confirm that `/ltfr debug` detects the active profession window
 
 **Still unverified:** resolved item names (currently displayed as `Objet #ID`), bag counts (all zero in the screenshot), refresh after bag changes, other recipes, and switching/closing professions. The screenshot does not prove correct inventory counting.
 
+## Experimental tracking panel (develop only)
+
+The panel is created by `addon/Tracking.lua`, loaded after `Main.lua`. Its options are saved via `LeatherTrackerFRDB`. The **Bases** toggle only changes the UI setting: **it does not yet draw basic leather/hide sources**. Tracking a recipe similarly does not yet create MelloUI pins. A future verified location dataset and map-layer API integration are required.
+
 ## Commands (temporary diagnostic interface)
 
 - `/ltfr api`: available APIs and integrations.
@@ -23,7 +27,7 @@ User screenshots confirm that `/ltfr debug` detects the active profession window
 
 ## Accessibility and interface roadmap
 
-**Slash commands are for testing, not the intended user experience.** A future version will offer a mouse-operated panel integrated into the native Leatherworking/profession window, updating when the selected recipe changes. It should show localized ingredient names, required/owned/missing counts, clear status indicators, and later verified sources and map navigation. Design for readable text, keyboard support where feasible, and no required command memorization. This interface is **not implemented yet**.
+**Slash commands are for testing, not the intended user experience.** The experimental v0.1.2 adds a clickable **LeatherTracker** button on the profession window and a separate panel with **Suivre la recette**, **Bases** and **Manquants** toggles. This integration is not yet validated in-game; the map still has no markers or source database. It should show localized ingredient names, required/owned/missing counts, clear status indicators, and later verified sources and map navigation. Design for readable text, keyboard support where feasible, and no required command memorization. Full native integration, verified map markers, and accessibility validation are **not implemented yet**.
 
 ## Installation
 
