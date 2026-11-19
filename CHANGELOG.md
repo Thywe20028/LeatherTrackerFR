@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.1.5 — develop, à tester en jeu
+- Ajout d'un bouton « LeatherTracker » à la fenêtre `ProfessionsFrame`, ouvrant un panneau de détails rattaché à la fenêtre.
+- Affichage des composants, des quantités et des options de suivi dans le panneau.
+- Panneau masqué par défaut, état mémorisé ; commande `/ltpanel` conservée.
+- Il ne s'agit **pas encore d'un véritable onglet natif** : l'API des onglets de WoW Forever reste à vérifier.
+- Carte MelloUI, emplacements de récolte, marchands et ressources de base : non implémentés.
+- À tester : bouton visible, chevauchement, taille de l'écran, suivi de recette et compatibilité des API.
+
+## v0.1.4 — develop
+- Remplacement du panneau flottant par une barre rattachée à la fenêtre des métiers ; non validée indépendamment en jeu.
+
+
 ## v0.1.3 — develop, non validée en jeu
 - Utilisation prioritaire de `C_Item.GetItemInfo` avec repli sur `GetItemInfo` pour les noms des composants.
 - Actualisation du diagnostic lorsque des informations d'objets deviennent disponibles.
