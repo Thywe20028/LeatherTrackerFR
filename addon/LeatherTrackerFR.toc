@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: LeatherTracker FR
-## Notes: Suivi de recette experimental et panneau metier pour WoW Forever.
+## Notes: Suivi de recette integre a la fenetre des metiers pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.1.3
+## Version: 0.1.4
 ## SavedVariables: LeatherTrackerFRDB
 Main.lua
 Tracking.lua
