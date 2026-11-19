@@ -12,7 +12,8 @@ local function safe(fn, ...)
 end
 local function itemName(id)
  if not id then return "Composant inconnu" end
- local name = safe(GetItemInfo, id)
+ local name = C_Item and safe(C_Item.GetItemInfo, id)
+ if not name then name = safe(_G.GetItemInfo, id) end
  if not name and C_Item and type(C_Item.GetItemNameByID) == "function" then
   name = safe(C_Item.GetItemNameByID, id)
  end
@@ -68,7 +69,7 @@ local function button(parent, width, label)
  return b
 end
 local function redraw()
- if not panel or not panel:IsShown() then return end
+ if not settings or not panel or not panel:IsShown() then return end
  local selected = recipeFromUI()
  local tracked = settings.trackedRecipeID
  local id = tracked or selected
@@ -142,8 +143,12 @@ local function createPanel()
  followButton = button(panel, 150, "Suivre la recette")
  followButton:SetPoint("TOPLEFT", 12, -36)
  followButton:SetScript("OnClick", function()
-  if settings.trackedRecipeID then settings.trackedRecipeID = nil
-  else settings.trackedRecipeID = recipeFromUI() end
+  local selected = recipeFromUI()
+  if selected and settings.trackedRecipeID ~= selected then
+   settings.trackedRecipeID = selected
+  else
+   settings.trackedRecipeID = nil
+  end
   redraw()
  end)
  basicButton = button(panel, 130, "Bases : OUI")
@@ -198,6 +203,7 @@ local function attach()
  if panel and panel:IsShown() then redraw() end
 end
 local function initialize()
+ if settings then return end
  LeatherTrackerFRDB = type(LeatherTrackerFRDB) == "table" and LeatherTrackerFRDB or {}
  settings = LeatherTrackerFRDB
  if type(settings.showBasics) ~= "boolean" then settings.showBasics = true end
@@ -206,6 +212,7 @@ local function initialize()
  createPanel()
  attach()
 end
+-- The slash command is registered at file load; this event confirms module execution.
 addon:RegisterEvent("PLAYER_LOGIN")
 addon:RegisterEvent("ADDON_LOADED")
 addon:RegisterEvent("BAG_UPDATE_DELAYED")
@@ -213,6 +220,7 @@ addon:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 addon:SetScript("OnEvent", function(_, event)
  if event == "PLAYER_LOGIN" then initialize()
  elseif event == "ADDON_LOADED" then
+  if not settings and IsLoggedIn and IsLoggedIn() then initialize() end
   if settings then attach() end
  elseif settings and (event == "BAG_UPDATE_DELAYED" or event == "GET_ITEM_INFO_RECEIVED") then
   redraw()
