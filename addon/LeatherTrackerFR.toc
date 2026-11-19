@@ -2,8 +2,7 @@
 ## Title: LeatherTracker FR
 ## Notes: Suivi de recette experimental et panneau metier pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.1.2
+## Version: 0.1.3
 ## SavedVariables: LeatherTrackerFRDB
-## OptionalDeps: MelloUI, MelloUI_Map, Auctionator
 Main.lua
 Tracking.lua
