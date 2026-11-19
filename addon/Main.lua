@@ -109,7 +109,13 @@ local function readRecipe(recipeID, origin)
    local basic = (slot.reagentType == nil or slot.reagentType == 1)
    if basic and qty and qty > 0 then
     count = count + 1
-    local nameItem = id and (call(_G.GetItemInfo, id) or ("Objet #"..id)) or "Composant sans itemID"
+    local nameItem
+    if id then
+     nameItem = (C_Item and call(C_Item.GetItemInfo, id)) or call(_G.GetItemInfo, id)
+     if type(nameItem) ~= "string" or nameItem == "" then
+      nameItem = "Objet #"..id.." (nom indisponible)"
+     end
+    else nameItem = "Composant sans itemID" end
     local n = bagCount(id)
     local text = tostring(nameItem).." : "..qty
     if n then text = text.." | sacs : "..n.." | manque : "..math.max(0, qty-n)
@@ -171,6 +177,9 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
  else show("Commandes : /ltfr scan | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
 end
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
-frame:SetScript("OnEvent", function()
- if frame:IsShown() and lastRecipeID then show(readRecipe(lastRecipeID, "actualisation des sacs")) end
+frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
+frame:SetScript("OnEvent", function(_, event)
+ if frame:IsShown() and lastRecipeID then
+  show(readRecipe(lastRecipeID, event == "GET_ITEM_INFO_RECEIVED" and "chargement des objets" or "actualisation des sacs"))
+ end
 end)
