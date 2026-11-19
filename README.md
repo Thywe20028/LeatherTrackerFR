@@ -1,7 +1,7 @@
 # LeatherTracker FR
 
 **French-language Leatherworking assistant for WoW Forever 1.60.1**  
-**Status:** experimental v0.1.5 on `develop` (not yet validated in-game); `main` remains v0.1.0.
+**Status:** experimental v0.2.0 on `develop`, not yet validated in-game; `main` unchanged.
 
 ## Goals
 
@@ -15,9 +15,9 @@ User screenshots confirm that `/ltfr debug` detects the active profession window
 
 ## Profession-window integration (develop only)
 
-Version 0.1.5 adds a **LeatherTracker launcher button** on `ProfessionsFrame` and a profession-anchored details panel inspired by Auctionator's workflow. It is **not yet a native WoW tab** and does **not replace the profession's CraftingPage**. The button toggles the panel; `/ltpanel` is a fallback. The panel starts hidden, and the preference is stored in `LeatherTrackerFRDB`. It displays the selected or tracked recipe and ingredients where available.
+Version 0.2.0 registers a **real side tab** with `ForeverCore.ProfessionTabs.Register` (API minor >= 2), using the implementation verified in user-provided ForeverCore v1.15.2 and SkillUp Forever v1.14.4 archives. Requires installing and enabling ForeverCore separately. The tab opens a LeatherTracker page within `ProfessionsFrame`, and returning to native tabs restores the native page. `/ltpanel` toggles the page and `/ltstatus` reports compatibility. This is an experimental implementation **not yet tested in the WoW client**.
 
-**Known limitations:** the panel is attached outside the right edge of the profession frame and may extend beyond the screen; its position and click behavior must be tested. The map, vendors, and base-resource source data are not implemented. `Bases` and `Manquants` control display preferences, not MelloUI layers.
+Known limitations: recipe selection may not remain available while the native crafting page is hidden; track a recipe before switching tabs. Source coordinates, MelloUI map layers, vendors and base-resource pins remain unimplemented. Test layout, secure frame behavior, navigation, and interaction with SkillUp before release.
 
 ## Commands (temporary diagnostic interface)
 
@@ -33,7 +33,7 @@ The intended final UX is a native-looking LeatherTracker tab inside the professi
 
 ## Installation
 
-Copy `addon/LeatherTrackerFR.toc`, `addon/Main.lua` and `addon/Tracking.lua` into `Interface/AddOns/LeatherTrackerFR/` in the WoW Forever installation. Enable the addon. See [French user guide](docs/Guide_utilisateur_v0.2.docx).
+Install and enable **ForeverCore v1.15.2** first. Copy `addon/LeatherTrackerFR.toc`, `addon/Main.lua` and `addon/Tracking.lua` into `Interface/AddOns/LeatherTrackerFR/` in the WoW Forever installation. Enable the addon. See [French user guide](docs/Guide_utilisateur_v0.2.docx).
 
 ## Documentation
 
