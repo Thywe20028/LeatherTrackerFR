@@ -3,7 +3,7 @@
 local addon = CreateFrame("Frame")
 local settings
 local panel, content, followButton, basicButton, missingButton
-local currentRecipeID, lastDisplayed, lastTracked
+local lastDisplayed, lastTracked
 local function safe(fn, ...)
  if type(fn) ~= "function" then return nil end
  local ok, a, b = pcall(fn, ...)
@@ -173,22 +173,28 @@ local function createPanel()
  panel:Hide()
 end
 local toggle
+local function togglePanel()
+ createPanel()
+ if panel:IsShown() then panel:Hide()
+ else
+  panel:ClearAllPoints()
+  panel:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+  panel:Show()
+ end
+end
+SLASH_LEATHERTRACKERPANEL1 = "/ltpanel"
+SlashCmdList.LEATHERTRACKERPANEL = togglePanel
 local function attach()
  local p = _G.ProfessionsFrame
  if not p then return end
  if not toggle then
   toggle = button(p, 125, "LeatherTracker")
-  toggle:SetPoint("TOPRIGHT", p, "TOPRIGHT", -46, -34)
-  toggle:SetFrameLevel(p:GetFrameLevel()+10)
-  toggle:SetScript("OnClick", function()
-   createPanel()
-   if panel:IsShown() then panel:Hide() else
-    panel:ClearAllPoints()
-    panel:SetPoint("TOPLEFT", p, "TOPRIGHT", 6, -25)
-    panel:Show()
-   end
-  end)
+  toggle:SetPoint("TOPLEFT", p, "TOPLEFT", 100, -42)
+  toggle:SetFrameLevel(p:GetFrameLevel()+20)
+  toggle:Show()
+  toggle:SetScript("OnClick", togglePanel)
  end
+ if toggle and not toggle:IsShown() and p:IsShown() then toggle:Show() end
  if panel and panel:IsShown() then redraw() end
 end
 local function initialize()
