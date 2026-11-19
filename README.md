@@ -1,54 +1,38 @@
 # LeatherTracker FR
 
-**French-language Leatherworking assistant for World of Warcraft Forever 1.60.1**
+**French-language Leatherworking assistant for WoW Forever 1.60.1**  
+**Status:** experimental prototype v0.1.0 — recipe selection currently fails on the tested client.
 
-🚧 **Status: Early development — Prototype v0.1.0**
+## Goals
 
-LeatherTracker FR is a free addon project designed to help players find the materials needed to craft Leatherworking recipes.
+Track recipe ingredients and inventory, find verified skinning/loot/vendor sources, and eventually show gathering locations on the MelloUI map with optional Auctionator prices.
 
-## Planned Features
+## Current status
 
-- Read Leatherworking recipes and required materials.
-- Track materials available in the player's inventory.
-- Identify missing crafting materials.
-- Find creatures that provide leather, hides and scales.
-- Display creature levels and Skinning skill requirements.
-- Show verified farming locations on the MelloUI map.
-- Integrate available Auctionator prices.
-- Provide a fully French-language interface.
+- `/ltfr api`: reports available client functions and integrations.
+- `/ltfr scan`: experimental; **currently blocked** because `C_TradeSkillUI.GetSelectedRecipeID` is unavailable in the tested WoW Forever client.
+- `GetRecipeInfo` and `GetRecipeSchematic` were reported available in an in-game diagnostic, but end-to-end reading is **not yet confirmed**.
+- No gathering markers, skinning rates, routing, or auction prices are implemented.
 
-## Current Development Status
+## Installation
 
-The first prototype includes an API diagnostic interface and experimental recipe reading.
+Copy `addon/LeatherTrackerFR.toc` and `addon/Main.lua` into `Interface/AddOns/LeatherTrackerFR/` in your WoW Forever installation. Then enable the addon. See [French user guide](docs/Guide_utilisateur_v0.2.docx).
 
-Testing on WoW Forever 1.60.1 has confirmed the availability of `C_TradeSkillUI.GetRecipeInfo` and `C_TradeSkillUI.GetRecipeSchematic`.
+## Documentation
 
-Recipe selection detection is currently being improved. Full recipe tracking, gathering locations and map integration are not yet functional.
+- [Cahier des charges v0.4](docs/Cahier_des_charges_v0.4.docx)
+- [Guide utilisateur v0.2](docs/Guide_utilisateur_v0.2.docx)
+- [Changelog](CHANGELOG.md)
 
-## Technical Approach
+## Planned data sources
 
-The addon is being developed in Lua for WoW Forever.
+- Warcraft Forever: https://warcraftforever.com/developers/data/
+- ForeverDB: https://foreverdb.net/developers
 
-Planned integrations:
-
-- MelloUI — Map markers and navigation
-- HandyNotes — Location data
-- Auctionator — Auction house prices
-- ForeverDB — Creature, Skinning, vendor and gathering data
-- Warcraft Forever game data — Recipes and items
-
-External data will be prepared during development and stored locally for offline use. No private API keys will be distributed with the addon.
-
-## Data Attribution
-
-ForeverDB: https://foreverdb.net
-
-ForeverDB data integration is planned and subject to API access approval and applicable usage conditions.
-
-## Language
-
-The addon interface will be in French. English documentation is provided for contributors and data providers.
+Integration is **planned**, not yet implemented or approved. Data will be checked for provenance, license/usage terms, and version, and prepared offline. **Never commit API keys.** If ForeverDB data is used, attribution will be displayed according to its applicable terms.
 
 ## Development
 
-This project is under active development. Features and compatibility will be validated through in-game testing before release.
+The next milestone (v0.1.1) is reliable selection of a Leatherworking recipe and extraction of its required reagents, verified by in-game tests.
+
+No license has been selected yet; do not assume permission to redistribute code or third-party datasets.
