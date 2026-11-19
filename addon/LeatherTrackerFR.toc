@@ -2,7 +2,7 @@
 ## Title: LeatherTracker FR
 ## Notes: Onglet natif de metier via ForeverCore pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.2.1
+## Version: 0.2.2
 ## SavedVariables: LeatherTrackerFRDB
 ## OptionalDeps: ForeverCore
 Main.lua
