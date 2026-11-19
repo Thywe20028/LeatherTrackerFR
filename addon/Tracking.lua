@@ -1,7 +1,7 @@
--- LeatherTracker FR 0.1.4: extension non destructive de la fenetre Professions.
+-- LeatherTracker FR 0.1.5: extension non destructive de la fenetre Professions.
 -- Pas de marqueurs MelloUI tant que les sources ne sont pas verifiees.
 local addon = CreateFrame("Frame")
-local settings, bar, title, follow, basics, missing, status, tab, detail, selectedName
+local settings, bar, title, follow, basics, missing, status, tab, detail
 local lastSelected, elapsed = nil, 0
 
 local function safe(fn, ...)
@@ -34,7 +34,6 @@ local function update()
  if not settings or not bar then return end
  local id, name = selectedRecipe()
  local tracked = settings.trackedRecipeID
- selectedName = name
  title:SetText("|cffffd100LeatherTracker|r")
  if tracked then
   local info = C_TradeSkillUI and safe(C_TradeSkillUI.GetRecipeInfo, tracked)
@@ -78,7 +77,7 @@ local function update()
    lines[#lines+1] = "|cffffd100CARTE|r"
    lines[#lines+1] = "Emplacements verifies non encore importes."
    lines[#lines+1] = settings.showBasics and "Ressources de base : activees" or "Ressources de base : masquees"
-   detail:SetText(table.concat(lines, "\\n"))
+   detail:SetText(table.concat(lines, "\n"))
   else
    detail:SetText("Selectionnez une recette dans Travail du cuir.")
   end
@@ -156,6 +155,7 @@ local function initialize()
  if type(settings.showBasics) ~= "boolean" then settings.showBasics = true end
  if type(settings.onlyMissing) ~= "boolean" then settings.onlyMissing = true end
  if type(settings.trackedRecipeID) ~= "number" then settings.trackedRecipeID = nil end
+ if type(settings.hiddenBar) ~= "boolean" then settings.hiddenBar = true end
  makeBar()
 end
 
