@@ -17,22 +17,43 @@ local function safe(fn, ...)
  return nil
 end
 
-local function currentRecipe()
- local frame = _G.ProfessionsFrame
- if not frame then return nil end
- local crafting = frame.CraftingPage
- local form = crafting and crafting.SchematicForm
- local info = form and safe(form.GetRecipeInfo, form)
- if type(info) == "table" and type(info.recipeID) == "number" then
-  selectedCache, selectedNameCache = info.recipeID, info.name
-  return info.recipeID, info.name
- end
- return selectedCache, selectedNameCache
-end
-
 local function recipeInfo(id)
  if not id or not C_TradeSkillUI then return nil end
  return safe(C_TradeSkillUI.GetRecipeInfo, id)
+end
+
+local function validRecipeID(id)
+ return type(id) == "number" and id > 0
+end
+
+local function clearSelection()
+ selectedCache, selectedNameCache = nil, nil
+end
+
+local function captureSelection(frame)
+ local api = C_TradeSkillUI
+ if not frame or not frame:IsVisible() or (api and safe(api.IsDataSourceChanging) == true) then
+  clearSelection()
+  return
+ end
+
+ local crafting = frame.CraftingPage
+ -- ForeverCore hides Fabrication when displaying the LeatherTracker page.
+ if not crafting or not crafting:IsVisible() then return end
+ local form = crafting.SchematicForm or (crafting.Schematic and crafting.Schematic.SchematicForm)
+ local info = form and safe(form.GetRecipeInfo, form)
+ local id = type(info) == "table" and info.recipeID
+ if not validRecipeID(id) then
+  id = api and safe(api.GetSelectedRecipeID)
+  info = validRecipeID(id) and recipeInfo(id)
+ end
+
+ if validRecipeID(id) then
+  selectedCache = id
+  selectedNameCache = type(info) == "table" and info.name or nil
+ else
+  clearSelection()
+ end
 end
 
 local function itemName(id)
@@ -49,10 +70,10 @@ end
 
 local function refresh()
  if not page or not db then return end
- local selected, selectedName = currentRecipe()
+ local selected, selectedName = selectedCache, selectedNameCache
  local id = db.trackedRecipeID or selected
  local info = id and recipeInfo(id)
- local recipeName = (type(info) == "table" and info.name) or selectedName or (id and ("Recette #"..id))
+ local recipeName = (type(info) == "table" and info.name) or (id == selected and selectedName) or (id and ("Recette #"..id))
  header:SetText(sectionNames[currentSection])
  subtitle:SetText(recipeName and (recipeName .. (db.trackedRecipeID and "  |cff88ff88(Suivi actif)|r" or "  |cffcccccc(Apercu)|r")) or "Selectionnez une recette dans Fabrication.")
  for _, label in ipairs(lines) do label:Hide() end
@@ -184,6 +205,8 @@ local function register()
   return
  end
  registered = true
+ -- Only clear the preview on close. ForeverCore still owns native navigation.
+ frame:HookScript("OnHide", clearSelection)
  print("LeatherTracker : onglet metier enregistre.")
 end
 
@@ -196,7 +219,10 @@ SlashCmdList.LEATHERTRACKERPANEL = function()
  end
  local tabs = _G.ForeverCore.ProfessionTabs
  if tabs.Selected and tabs.Selected() == KEY then tabs.ShowNative()
- else tabs.Select(KEY) end
+ else
+  captureSelection(_G.ProfessionsFrame)
+  tabs.Select(KEY)
+ end
 end
 
 SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
@@ -222,16 +248,18 @@ addon:SetScript("OnEvent", function(_, event)
  elseif event == "ADDON_LOADED" then
   if db then register() end
  else
-  if page and page:IsShown() then refresh() end
+  if page and page:IsVisible() then refresh() end
  end
 end)
 addon:SetScript("OnUpdate", function(_, dt)
- elapsed = elapsed + dt
- if elapsed < 1 then return end
- elapsed = 0
- if not registered then register() end
- if _G.ProfessionsFrame and _G.ProfessionsFrame:IsShown() then
-  local id = currentRecipe()
-  if registered and page and page:IsShown() and id ~= lastRecipe then refresh() end
+ if not registered then
+  elapsed = elapsed + dt
+  if elapsed < 1 then return end
+  elapsed = 0
+  register()
+  if not registered then return end
  end
+ -- Sample before switching tabs, without changing the client's recipe selection.
+ captureSelection(_G.ProfessionsFrame)
+ if page:IsVisible() and selectedCache ~= lastRecipe then refresh() end
 end)
