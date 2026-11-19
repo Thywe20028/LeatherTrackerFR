@@ -1,5 +1,22 @@
 # Changelog
 
+## En développement — sélection dans l’onglet intégré
+
+- L’aperçu est capturé dans Fabrication visible. Le formulaire masqué ne remplace plus la dernière sélection visible.
+- Fermeture et changement de source détecté effacent l’aperçu. La recette suivie reste enregistrée et conserve son propre libellé.
+- Test de régression reproductible avec `texlua tests/selection.lua`. Validation du nouveau code dans WoW Forever en attente.
+
+## v0.3.1 et v0.3.2 — essais hors de l’historique Git inspecté
+
+- 0.3.1 graphique essayée par Shana. L’interface a été jugée trop vide et la sélection restait à fiabiliser. ZIP GitHub introuvable dans les branches, tags et releases consultés le 19 novembre 2026.
+- 0.3.2 autonome inspectée dans son ZIP. Le TOC ne déclare pas ForeverCore. Essais en jeu en attente.
+
+## v0.2.3 — base de l’onglet ForeverCore
+
+- Correction des ancrages et suppression du rappel qui forçait le retour à la page native à la fermeture.
+- ForeverCore déclaré comme dépendance sur `develop`.
+- Ouverture et fermeture normales de l’onglet rapportées par Shana avec ForeverCore v1.15.2. Le commit exact utilisé pour cet essai n’a pas été précisé.
+
 ## v0.2.2 — develop, non testée en jeu
 - Quatre sections accessibles par boutons dans la page LeatherTracker : suivi, matériaux, sources et zones, carte MelloUI.
 - Présentation des composants en lignes et comparaison des quantités avec l'inventaire quand l'API répond.
