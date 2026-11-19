@@ -1,7 +1,7 @@
 ## Interface: 16001
 ## Title: LeatherTracker FR
-## Notes: Prototype de lecture des recettes et des composants pour WoW Forever.
+## Notes: Prototype experimental de lecture des recettes pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.1.0
+## Version: 0.1.1
 ## OptionalDeps: MelloUI, MelloUI_Map, Auctionator
 Main.lua
