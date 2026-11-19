@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.1 — develop, non validée en jeu
+- Cache de la recette sélectionnée avant de changer d'onglet ; le bouton Suivre utilise cette sélection même lorsque la page Fabrication est masquée.
+- Géométrie de la page rattachée à ProfessionsFrame, réduction des coordonnées fixes.
+- Actualisation des composants et diagnostic de version.
+- Documentation des données indispensables pour les taux de butin, les créatures et les repères MelloUI ; aucune donnée non vérifiée ajoutée.
+- À tester : affichage, retour à Fabrication, comportement de la sélection, dimensions et sauvegarde.
+
+
 ## v0.2.0 — develop, non validée en jeu
 - Remplacement du faux onglet par une page enregistrée via `ForeverCore.ProfessionTabs.Register` (minor >= 2).
 - Suppression du bouton positionné manuellement et du panneau externe.
