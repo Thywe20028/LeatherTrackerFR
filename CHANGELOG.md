@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.3 — develop, non validée en jeu
+- Utilisation prioritaire de `C_Item.GetItemInfo` avec repli sur `GetItemInfo` pour les noms des composants.
+- Actualisation du diagnostic lorsque des informations d'objets deviennent disponibles.
+- Protection contre les initialisations multiples du panneau, et vérification des réglages avant actualisation.
+- Possibilité de remplacer une recette suivie par une autre.
+- Suppression provisoire des `OptionalDeps` dans le TOC pour isoler le chargement.
+- À confirmer : disponibilité de `C_Item.GetItemInfo` dans le client, exécution de `Tracking.lua`, compatibilité de l'interface et du panneau.
+
+
 ## v0.1.2 — develop, untested in-game
 - Added `Tracking.lua`: clickable profession-window button, mouse-driven recipe follow/unfollow, missing-material and basic-resource toggles, saved preferences.
 - Added a reagent summary using game item names when cached, otherwise item IDs; refreshes on bag and item-info events.
