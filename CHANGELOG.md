@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.2.2 — develop, non testée en jeu
+- Quatre sections accessibles par boutons dans la page LeatherTracker : suivi, matériaux, sources et zones, carte MelloUI.
+- Présentation des composants en lignes et comparaison des quantités avec l'inventaire quand l'API répond.
+- Largeur personnalisée 850 via ForeverCore ; navigation par son véritable onglet latéral.
+- Sources et carte : états vides explicites, sans créatures, taux ou coordonnées inventés.
+- Contrôles de suivi, ressources de base et filtre manquants conservés.
+- À vérifier en jeu : géométrie, visibilité de l'onglet, changement de page, sélection et inventaire.
+
+
 ## v0.2.1 — develop, non validée en jeu
 - Cache de la recette sélectionnée avant de changer d'onglet ; le bouton Suivre utilise cette sélection même lorsque la page Fabrication est masquée.
 - Géométrie de la page rattachée à ProfessionsFrame, réduction des coordonnées fixes.
