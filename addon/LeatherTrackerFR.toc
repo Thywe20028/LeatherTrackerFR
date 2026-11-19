@@ -4,6 +4,6 @@
 ## Author: Prototype communautaire
 ## Version: 0.2.3
 ## SavedVariables: LeatherTrackerFRDB
-## OptionalDeps: ForeverCore
+## Dependencies: ForeverCore
 Main.lua
 Tracking.lua
