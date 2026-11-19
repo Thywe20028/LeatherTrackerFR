@@ -4,9 +4,6 @@ local addon = CreateFrame("Frame")
 local settings
 local panel, content, followButton, basicButton, missingButton
 local currentRecipeID, lastDisplayed, lastTracked
-local basicItems = {
-  -- Item IDs intentionally omitted until verified against WoW Forever data.
-}
 local function safe(fn, ...)
  if type(fn) ~= "function" then return nil end
  local ok, a, b = pcall(fn, ...)
@@ -76,7 +73,7 @@ local function redraw()
  local tracked = settings.trackedRecipeID
  local id = tracked or selected
  local data = recipeData(id)
- followButton:SetEnabled(selected ~= nil or tracked ~= nil)
+ if followButton.SetEnabled then followButton:SetEnabled(selected ~= nil or tracked ~= nil) end
  followButton:SetText(tracked and "Arreter le suivi" or "Suivre la recette")
  basicButton:SetText(settings.showBasics and "Bases : OUI" or "Bases : NON")
  missingButton:SetText(settings.onlyMissing and "Manquants : OUI" or "Manquants : NON")
