@@ -1,7 +1,7 @@
 # LeatherTracker FR
 
 **French-language Leatherworking assistant for WoW Forever 1.60.1**  
-**Status:** experimental prototype v0.1.0 — recipe selection currently fails on the tested client.
+**Status:** experimental v0.1.1 on `develop` (not yet validated in-game). `main` remains v0.1.0.
 
 ## Goals
 
@@ -10,7 +10,7 @@ Track recipe ingredients and inventory, find verified skinning/loot/vendor sourc
 ## Current status
 
 - `/ltfr api`: reports available client functions and integrations.
-- `/ltfr scan`: experimental; **currently blocked** because `C_TradeSkillUI.GetSelectedRecipeID` is unavailable in the tested WoW Forever client.
+- `/ltfr scan`: experimental; tries reading selection from the professions UI and falls back to the selected-recipe API if available. **Needs testing on WoW Forever**.\n- `/ltfr debug`: reports professions frame and recipe-selection state.\n- `/ltfr id NUMBER`: manually reads a known recipe ID to isolate selection issues.\n- `/ltfr refresh`: refreshes the last recipe and inventory counts.
 - `GetRecipeInfo` and `GetRecipeSchematic` were reported available in an in-game diagnostic, but end-to-end reading is **not yet confirmed**.
 - No gathering markers, skinning rates, routing, or auction prices are implemented.
 
@@ -33,6 +33,6 @@ Integration is **planned**, not yet implemented or approved. Data will be checke
 
 ## Development
 
-The next milestone (v0.1.1) is reliable selection of a Leatherworking recipe and extraction of its required reagents, verified by in-game tests.
+The next milestone is to validate the v0.1.1 experimental reader in-game, adjust client-specific selection and reagent structures, then test accurate missing-item counts. This is **not** a finished release.
 
 No license has been selected yet; do not assume permission to redistribute code or third-party datasets.
