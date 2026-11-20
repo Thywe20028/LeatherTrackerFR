@@ -1,3 +1,10 @@
+## 0.7.44
+
+- Affiche Utilisé dans les recettes même sans schéma chargé. Ajoute des recettes documentées de WoW Forever en complément des données du client.
+- Indexe aussi les objets fabriqués pour compléter les fiches d’obtention et corrige les seuils de métier non confirmés des matériaux intégrés.
+- Rend les continents repliables indépendamment des filtres de méthode et précise les variantes d’icônes en fonction de la source.
+
+- Ajoute des explications permanentes pour les options principales et replie le diagnostic.
 ## 0.7.43
 
 - Scinde le rafraîchissement de Ma collecte pour respecter la limite de variables externes par fonction du client WoW.

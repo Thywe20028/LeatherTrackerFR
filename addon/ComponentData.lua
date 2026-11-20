@@ -132,10 +132,10 @@ local sources = {
   {name = "Rouleau d’étoffe runique", method = "Fabrication", skill = "Couture 205",
    context = "5 étoffes runiques", provenance = "WoW Forever Ninja"},
  },
- [2312] = {{name = "Gants en cuir fin", method = "Fabrication", skill = "Travail du cuir 50", provenance = "WoW Forever Ninja"}},
- [2313] = {{name = "Renfort d’armure moyen", method = "Fabrication", skill = "Travail du cuir 75", provenance = "WoW Forever Ninja"}},
- [4246] = {{name = "Ceinture en cuir fin", method = "Fabrication", skill = "Travail du cuir 55", provenance = "WoW Forever Ninja"}},
- [4243] = {{name = "Tunique en cuir fin", method = "Fabrication", skill = "Travail du cuir 60", provenance = "WoW Forever Ninja"}},
+ [2312] = {{name = "Gants en cuir fin", method = "Fabrication", skill = "Travail du cuir", provenance = "Warcraft Forever Wiki · Recettes"}},
+ [2313] = {{name = "Renfort d’armure moyen", method = "Fabrication", skill = "Travail du cuir", provenance = "Warcraft Forever Wiki · Recettes"}},
+ [4246] = {{name = "Ceinture en cuir fin", method = "Fabrication", skill = "Travail du cuir", provenance = "Warcraft Forever Wiki · Recettes"}},
+ [4243] = {{name = "Tunique en cuir fin", method = "Fabrication", skill = "Travail du cuir", provenance = "Warcraft Forever Wiki · Recettes"}},
  [13423] = {
   {name = "Huile de pierre-écaille", method = "Fabrication", skill = "Alchimie 250", provenance = "Icy Veins Database"},
  },
@@ -312,3 +312,11 @@ local componentGroups = {
 
 addon.componentSources = sources
 addon.componentGroups = componentGroups
+
+-- Ingredient lists documented for Forever. The client takes precedence when it supplies the recipe.
+-- https://www.warcraftforever.wiki/wiki/Leatherworking/Recipes
+addon.documentedRecipes = {
+ {output = 6468, name = "Ceinture en écailles de déviant", inputs = {{6471, 10}, {6470, 10}, {2321, 2}}},
+ {output = 2313, name = "Renfort d’armure moyen", inputs = {{2319, 4}, {2320, 1}}},
+ {output = 4243, name = "Tunique en cuir fin", inputs = {{4231, 3}, {2318, 6}, {2320, 4}}},
+}

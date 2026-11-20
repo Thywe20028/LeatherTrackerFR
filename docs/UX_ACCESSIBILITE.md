@@ -74,3 +74,9 @@ Tester dans WoW Forever les bandeaux, les noms de zones sur deux lignes, les bar
 | Navigation commune | Talents | Repères stables, en-têtes alignés et onglet actif identifiable. |
 
 Les contrôles repliables utilisent les mêmes textures de zoom que le suivi compact. Les listes utilisent la texture de surbrillance des titres de quête. Contrôler dans WoW Forever les textures, l’alignement et les noms sur deux lignes à plusieurs échelles UI, avec une source courte et une source comportant un taux et un échantillon.
+
+## Recettes et provenance 0.7.44
+
+La rubrique Utilisé dans les recettes est toujours présente sur une fiche de composant. Les schémas du client l’emportent sur les entrées documentées pour un même objet fabriqué. Les entrées documentées indiquent leur provenance et leur état d’apprentissage reste inconnu. Les objets fabriqués repérés dans les schémas du Travail du cuir peuvent compléter les fiches sans source de fabrication. Une fiche sans données d’obtention expose un lien vers sa page ForeverDB.
+
+Les recettes documentées incluses proviennent de la [liste des recettes du Warcraft Forever Wiki](https://www.warcraftforever.wiki/wiki/Leatherworking/Recipes). Cette liste provient du client bêta. Les valeurs de progression publiées ne constituent pas systématiquement un niveau d’apprentissage vérifié.
