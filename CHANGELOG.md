@@ -1,3 +1,9 @@
+## 0.7.39
+
+- Présente les recettes en lignes compactes avec icône et statut d’apprentissage.
+- Dimensionne chaque fiche Sources selon son contenu et remplace les fonds répétés par des séparateurs.
+- Réutilise les textures Warcraft pour le repli des bandeaux et la sélection dans Sources.
+
 ## 0.7.38
 
 - Harmonise les bandeaux du catalogue, des filtres, des recettes et des options dans la fenêtre Métiers.

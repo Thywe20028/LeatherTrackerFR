@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.38"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.39"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -460,12 +460,16 @@ local function categoryBand(parent, text, handler)
   local hover = band:CreateTexture(nil, "HIGHLIGHT")
   hover:SetAllPoints()
   hover:SetColorTexture(0.71, 0.49, 0.24, 0.15)
-  band.ToggleMark = label(band, "GameFontNormal", 0, 0)
-  band.ToggleMark:ClearAllPoints()
-  band.ToggleMark:SetPoint("RIGHT", -6, 0)
+  band.ToggleMark = band:CreateTexture(nil, "ARTWORK")
+  band.ToggleMark:SetSize(15, 15)
+  band.ToggleMark:SetPoint("RIGHT", -5, 0)
   band:SetScript("OnClick", handler)
  end
  return band
+end
+
+local function setBandExpanded(band, expanded)
+ band.ToggleMark:SetTexture("Interface\\Minimap\\UI-Minimap-Zoom"..(expanded and "Out" or "In").."Button-Up")
 end
 
 local function input(parent, width, max)
@@ -564,7 +568,7 @@ local function renderComponentCatalog()
    header:ClearAllPoints()
    header:SetPoint("TOPLEFT", 0, -y)
    header:SetPoint("TOPRIGHT", 0, -y)
-   header.ToggleMark:SetText(open and "-" or "+")
+   setBandExpanded(header, open)
    local _, categoryIcon = itemInfo(group.icon)
    header.Icon:SetTexture(categoryIcon)
    y = y + 25
@@ -1211,7 +1215,7 @@ local function renderSourceRecipes(state, records)
  header:SetShown(#records > 0)
  if #records == 0 then return 0 end
  header.Text:SetText(("Recettes utilisant ce composant (%d)"):format(#records))
- header.ToggleMark:SetText(state.recipesOpen and "-" or "+")
+ setBandExpanded(header, state.recipesOpen)
  if not state.recipesOpen then return 33 end
  local pages = math.ceil(#records / recipePageSize)
  local page = math.min(pages, math.max(1, tonumber(state.recipePage) or 1))
@@ -1223,14 +1227,27 @@ local function renderSourceRecipes(state, records)
   local rowIndex = index - first + 1
   local row = rows[rowIndex]
   if not row then
-   row = button(list, "", 1, nil)
+   row = CreateFrame("Button", nil, list)
+   row:SetHeight(29)
+   row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+   row.Icon = row:CreateTexture(nil, "ARTWORK")
+   row.Icon:SetSize(22, 22)
+   row.Icon:SetPoint("LEFT", 4, 0)
+   local name = label(row, "GameFontHighlight", 32, -1)
+   name:SetPoint("TOPRIGHT", -6, -1)
+   name:SetWordWrap(false)
+   row:SetFontString(name)
+   row.Status = label(row, "GameFontHighlightSmall", 32, -15)
    rows[rowIndex] = row
   end
   row:ClearAllPoints()
   row:SetPoint("TOPLEFT", 7, -y)
   row:SetPoint("TOPRIGHT", -7, -y)
-  row:SetText(("%s (%s)"):format(record.name, record.learned == true and "apprise"
-   or record.learned == false and "non apprise" or "statut inconnu"))
+  row:SetText(record.name)
+  local _, outputIcon
+  if record.output then _, outputIcon = itemInfo(record.output) end
+  row.Icon:SetTexture(record.icon or outputIcon or "Interface\\Icons\\INV_Misc_Book_09")
+  row.Status:SetText(record.learned == true and "Apprise" or record.learned == false and "Non apprise" or "Statut inconnu")
   row:SetScript("OnClick", function()
    state.recipeID = state.recipeID ~= record.id and record.id or nil
    refresh()
@@ -1242,7 +1259,7 @@ local function renderSourceRecipes(state, records)
    row:UnlockHighlight()
   end
   row:Show()
-  y = y + 28
+  y = y + 31
  end
  if pages > 1 then
   panel.RecipePrevious:SetPoint("TOPLEFT", 7, -y)
@@ -1486,8 +1503,8 @@ refresh = function()
    sourceHeading:SetText(selectedGroup and selectedGroup.key ~= "all" and selectedGroup.name or "Toutes les sources")
    local places = panel.SourcePlaces
    local methodY, locationY = 26, nil
-   places.Method.ToggleMark:SetText(selection.methodsFolded and "+" or "-")
-   places.Location.ToggleMark:SetText(selection.locationsFolded and "+" or "-")
+   setBandExpanded(places.Method, not selection.methodsFolded)
+   setBandExpanded(places.Location, not selection.locationsFolded)
    places.Method:SetShown(#filters > 0)
    places.Location:SetShown(#filters > 0)
    for i, group in ipairs(filters) do
@@ -1502,7 +1519,8 @@ refresh = function()
      filter.Count:SetPoint("RIGHT", -4, 0)
      filter.Selected = filter:CreateTexture(nil, "BACKGROUND")
      filter.Selected:SetAllPoints()
-     filter.Selected:SetColorTexture(0.44, 0.32, 0.14, 0.6)
+     filter.Selected:SetTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight")
+     filter.Selected:SetVertexColor(0.86, 0.68, 0.37, 0.43)
      filter.Text:SetWordWrap(true)
      filter.Text:SetMaxLines(2)
      sourceFilters[i] = filter
@@ -1579,8 +1597,12 @@ refresh = function()
     local entry = sourceLines[rowIndex]
     if not entry then
      entry = CreateFrame("Frame", nil, list)
-     background(entry, 0.17, 0.13, 0.095)
-     entry.Name = label(entry, "GameFontNormalLarge", 10, -9)
+     local divider = entry:CreateTexture(nil, "BORDER")
+     divider:SetPoint("BOTTOMLEFT", 8, 0)
+     divider:SetPoint("BOTTOMRIGHT", -8, 0)
+     divider:SetHeight(1)
+     divider:SetColorTexture(0.41, 0.31, 0.18, 0.8)
+     entry.Name = label(entry, "GameFontNormal", 10, -7)
      entry.Info = label(entry, "GameFontHighlight", 10, -31)
      entry.Map = button(entry, "Voir sur la carte", 121, nil)
      entry.Details = button(entry, "Détails", 67, nil)
@@ -1625,10 +1647,9 @@ refresh = function()
      local rateBox = CreateFrame("Frame", nil, entry)
      entry.RateBox = rateBox
 
-     background(rateBox, 0.10, 0.085, 0.065)
-     rateBox.Value = label(rateBox, "GameFontNormal", 8, -5)
-     rateBox.Sample = label(rateBox, "GameFontHighlightSmall", 8, -22)
-     rateBox.Sample:SetPoint("TOPRIGHT", -8, -22)
+     rateBox.Value = label(rateBox, "GameFontNormal", 2, -2)
+     rateBox.Sample = label(rateBox, "GameFontHighlightSmall", 2, -17)
+     rateBox.Sample:SetPoint("TOPRIGHT", -4, -17)
      sourceLines[rowIndex] = entry
     end
     local hasModel = false
@@ -1672,7 +1693,6 @@ refresh = function()
       or (source.method == "Dépeçage" and ("%d corps dépecés"):format(source.observations)
        or ("%d observations"):format(source.observations)))
     end
-    rateBox:SetHeight(42)
 
     entry:ClearAllPoints()
     local column = (rowIndex - 1) % columns
@@ -1680,17 +1700,18 @@ refresh = function()
     entry:SetWidth(cardWidth)
     entry.Map:SetWidth(math.min(121, math.max(75, cardWidth - 96)))
 
-    local textLeft = 58
+    local textLeft = 56
     entry.Name:ClearAllPoints()
     entry.Name:SetPoint("TOPLEFT", textLeft, -9)
     entry.Name:SetPoint("TOPRIGHT", -8, -9)
     entry.Name:SetWordWrap(true)
     entry.Name:SetMaxLines(2)
     entry.Info:ClearAllPoints()
-    entry.Info:SetPoint("TOPLEFT", 10, -54)
-    entry.Info:SetPoint("TOPRIGHT", -10, -54)
     entry.Info:SetSpacing(3)
     entry.Name:SetText(source.name)
+    local nameHeight = math.max(14, entry.Name:GetStringHeight() or 0)
+    entry.Info:SetPoint("TOPLEFT", textLeft, -12 - nameHeight)
+    entry.Info:SetPoint("TOPRIGHT", -10, -12 - nameHeight)
     local provenance = source.provenance or source.locationSource or "ForeverDB.net"
     local primary = {source.method .. (source.level and ("  •  Niv. "..source.level) or "")}
     if source.zone then primary[#primary + 1] = source.zone end
@@ -1715,17 +1736,17 @@ refresh = function()
      if source.observations < 30 then details[#details + 1] = "Échantillon limité." end
     end
     entry.details = details
-    local infoHeight = math.max(#primary * 16, entry.Info:GetStringHeight() or 0)
-    local ratesY = 58 + infoHeight
+    local infoHeight = math.max(#primary * 14, entry.Info:GetStringHeight() or 0)
+    local ratesY = math.max(52, 15 + nameHeight + infoHeight)
     rateBox:ClearAllPoints()
     rateBox:SetPoint("TOPLEFT", 8, -ratesY)
     rateBox:SetPoint("TOPRIGHT", -8, -ratesY)
-    local height = ratesY + (hasSample and 42 or 0) + 42
+    local sampleHeight = hasSample and math.max(30, 19 + (rateBox.Sample:GetStringHeight() or 0)) or 0
+    rateBox:SetHeight(sampleHeight)
+    local height = ratesY + sampleHeight + 37
     entry:SetHeight(height)
     rowHeight = math.max(rowHeight, height)
     if column == columns - 1 or rowIndex == #matches then
-     local first = rowIndex - column
-     for i = first, rowIndex do sourceLines[i]:SetHeight(rowHeight) end
      rowY, rowHeight = rowY + rowHeight + 10, 0
     end
     local tomtom = settings.mode == "manual" and TomTom and type(TomTom.AddWaypoint) == "function"
@@ -1936,7 +1957,11 @@ scanLeatherworking = function(api)
     local infoOK, info
     if api.GetRecipeInfo then infoOK, info = pcall(api.GetRecipeInfo, recipeID) end
     local record = {id = recipeID, name = (infoOK and info and info.name) or schematic.name or ("Recette #"..recipeID), slots = {}}
-    if infoOK and info and type(info.learned) == "boolean" then record.learned = info.learned end
+    record.output = itemID(schematic.outputItemID)
+    if infoOK and info then
+     record.icon = info.icon
+     if type(info.learned) == "boolean" then record.learned = info.learned end
+    end
     local inputs = {}
     for _, slot in ipairs(schematic.reagentSlotSchematics or {}) do
      indexRecipeOptions(slot.reagents)

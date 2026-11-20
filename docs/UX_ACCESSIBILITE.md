@@ -63,3 +63,14 @@ Tester à plusieurs résolutions et échelles UI, avec et sans MelloUI / Auction
 Le catalogue, Sources et Options utilisent des bandeaux sombres à titres dorés. La navigation occupe environ 30 % de l’espace disponible, avec une largeur minimale. Les deux colonnes défilent indépendamment. Les groupes Méthodes et Continents et zones se replient indépendamment pour chaque composant, sans effacer les filtres actifs. La sélection utilise à la fois une couleur de texte et un fond distinct. Le catalogue et les réglages avancés mémorisent également leur état.
 
 Tester dans WoW Forever les bandeaux, les noms de zones sur deux lignes, les barres de défilement et la largeur des cartes à plusieurs échelles d’interface. Vérifier après `/reload` le repli, les filtres et le retour à Fabrication.
+
+## Grille et densité 0.7.39
+
+| Écran | Référence native | Densité et comportement |
+| --- | --- | --- |
+| Ma collecte | Métiers et Grimoire | Catalogue compact avec icône et nom à gauche. Objectifs et quantités dans la colonne principale. |
+| Sources | Métiers et Grimoire | Filtres compacts et recettes en liste. Résultats intermédiaires, hauteur selon le contenu. Ingrédients et données techniques détaillés à la demande. |
+| Options | Métiers | Groupes alignés, descriptions au survol et réglages avancés repliables. |
+| Navigation commune | Talents | Repères stables, en-têtes alignés et onglet actif identifiable. |
+
+Les contrôles repliables utilisent les mêmes textures de zoom que le suivi compact. Les listes utilisent la texture de surbrillance des titres de quête. Contrôler dans WoW Forever les textures, l’alignement et les noms sur deux lignes à plusieurs échelles UI, avec une source courte et une source comportant un taux et un échantillon.

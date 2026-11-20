@@ -15,6 +15,7 @@ local function frame(parent)
   local previous = self.scripts[event] or noop
   self.scripts[event] = function(...) previous(...); callback(...) end
  end
+ function widget:SetHeight(value) self.height = value end
  function widget:SetTexture(value) self.texture = value end
  function widget:GetRight() return rawget(self, "right") or 180 end
  function widget:GetAlpha() return rawget(self, "alpha") or 1 end
@@ -234,7 +235,9 @@ assert(collectionPanel.SourceNext.Arrow.texture:find("NextPage", 1, true))
 assert(collectionPanel.SourcePickerButton.text == "Mes suivis")
 assert(collectionPanel.SourceRecipes:IsVisible())
 collectionPanel.SourceRecipes.scripts.OnClick()
-button("Recette de test 100 (apprise)").scripts.OnClick()
+local recipe = button("Recette de test 100")
+assert(recipe.Status.text == "Apprise" and recipe.Icon.texture)
+recipe.scripts.OnClick()
 assert(collectionPanel.RecipeIngredients.text:find("2 ×", 1, true))
 button("Voir dans Fabrication").scripts.OnClick()
 assert(openedRecipe == 100 and not collectionPanel:IsVisible())
@@ -245,11 +248,11 @@ local places = collectionPanel.SourcePlaces
 local sourceState = LeatherTrackerFRDB.collection.sourceViews[6471]
 places.Method.scripts.OnClick()
 assert(sourceState.methodsFolded and not sourceState.locationsFolded)
-assert(places.Method.ToggleMark.text == "+" and places.Location.ToggleMark.text == "-")
+assert(places.Method.ToggleMark.texture:find("ZoomIn", 1, true) and places.Location.ToggleMark.texture:find("ZoomOut", 1, true))
 places.Location.scripts.OnClick()
-assert(sourceState.locationsFolded and places.Location.ToggleMark.text == "+")
+assert(sourceState.locationsFolded and places.Location.ToggleMark.texture:find("ZoomIn", 1, true))
 collectionEvents.OnEvent(nil, "PLAYER_LOGIN")
-assert(places.Method.ToggleMark.text == "+" and places.Location.ToggleMark.text == "+")
+assert(places.Method.ToggleMark.texture:find("ZoomIn", 1, true) and places.Location.ToggleMark.texture:find("ZoomIn", 1, true))
 places.Method.scripts.OnClick()
 places.Location.scripts.OnClick()
 assert(not sourceState.methodsFolded and not sourceState.locationsFolded)
@@ -275,10 +278,12 @@ filterSources("")
 assert(firstRow[1].point[2] == firstRow[2].point[2] and firstRow[2].point[3] < firstRow[1].point[3])
 results.simulatedWidth = nil
 filterSources("Créature de test")
+local sampledHeight = sourceDetails().height
 local observed = sourceDetails().RateBox
 assert(observed:IsVisible() and observed.Value.text == "25,0 %"
  and observed.Sample.text == "2 obtention(s) sur 8 observations")
 filterSources("Marchand de test")
+assert(sourceDetails().height < sampledHeight)
 assert(sourceDetails().Info.text:find("Jeu simulé", 1, true))
 button("Options").scripts.OnClick()
 assert(collectionPanel.MapSettings:IsVisible() and not collectionPanel.SourceCounts:IsVisible())
