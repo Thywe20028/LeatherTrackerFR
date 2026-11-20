@@ -1,3 +1,13 @@
+## 0.7.34
+
+- Affiche le seuil natif ou la plus basse compétence relevée lors d’un dépeçage réussi, avec un libellé explicite.
+- Précise que les taux personnels portent sur les fenêtres de dépeçage attribuées au bon corps.
+- Documente les prochaines étapes de l’apprentissage local.
+
+## 0.7.33
+
+- Ajoute un accès direct aux fiches Sources depuis le catalogue et un filtre Mes dépeçages pour les relevés personnels.
+
 ## 0.7.32
 
 - Enregistre les fréquences de butin observées par espèce après un dépeçage réussi et identifié. Les taux personnels sont visibles dans Sources.

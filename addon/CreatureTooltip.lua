@@ -154,13 +154,6 @@ local function matchingLevel(unit, guid)
  return level
 end
 
-local function estimatedRequirement(level)
- if not level or level > 60 then return end
- if level <= 10 then return 1 end
- if level <= 20 then return (level - 10) * 10 end
- return level * 5
-end
-
 local nonSkinnableTypes = {
  Elemental = true, ["Élémentaire"] = true,
  Humanoid = true, ["Humanoïde"] = true,
@@ -207,6 +200,7 @@ local function finishSkinning()
  end
  count.samples = count.samples + 1
  count.total = count.total + attempt.skill
+ count.lowestSkill = math.min(count.lowestSkill or attempt.skill, attempt.skill)
 end
 
 local skinningEvents = CreateFrame("Frame")
@@ -296,14 +290,13 @@ local function render(tooltip, data)
  if skin == true then
   tooltip:AddLine("Dépeçable", 0.25, 0.85, 0.35)
   local recorded = learned and level and learned[level]
-  local estimate = not required and not recorded and estimatedRequirement(level)
   local successes = learned and learned.successes and level and learned.successes[level]
-  local threshold = required or recorded or (estimate and ("~%d"):format(estimate)) or "—"
-  tooltip:AddLine(("Dépeçage : %s / %s"):format(threshold, playerSkill() or "—"), 0.86, 0.86, 0.86)
-  if successes then
-   local average = math.floor(successes.total / successes.samples + 0.5)
-   tooltip:AddLine(("Réussites : moy. %d (n=%d)"):format(average, successes.samples), 0.65, 0.65, 0.65)
+  local threshold = required or recorded or "seuil inconnu"
+  local skillText = ("Dépeçage : %s / %s"):format(threshold, playerSkill() or "—")
+  if not required and not recorded and successes and successes.lowestSkill then
+   skillText = skillText .. (" · réussi à %d"):format(successes.lowestSkill)
   end
+  tooltip:AddLine(skillText, 0.86, 0.86, 0.86)
  elseif (entry and entry.nonSkinnable) or nonSkinnableEnemy(unit, guid) then
   if skin ~= false then tooltip:AddLine("Non dépeçable", 0.95, 0.30, 0.30) end
  end

@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.32"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.33"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -374,7 +374,9 @@ local function sourceLayout(records)
  end
  for index, source in ipairs(records) do
   add("all", "Toutes les sources", index, 0)
-  if source.method == "Fabrication" then
+  if source.personalSkinning then
+   add("personal", "Mes dépeçages", index, 1)
+  elseif source.method == "Fabrication" then
    add("craft", "Fabrication", index, 1)
   elseif source.zone then
    local continent = source.continent
@@ -492,7 +494,7 @@ local function renderComponentCatalog()
      local row = catalog.rows[used]
      if not row then
       row = CreateFrame("Frame", nil, catalog.Body)
-      row:SetHeight(37)
+      row:SetHeight(54)
       background(row, 0.15, 0.12, 0.09)
       row.IconButton = CreateFrame("Button", nil, row)
       row.IconButton:SetSize(32, 32)
@@ -520,10 +522,12 @@ local function renderComponentCatalog()
         track(row.item, 1)
        end
       end)
-      row.Toggle:SetPoint("RIGHT", -3, 0)
+      row.Toggle:SetPoint("BOTTOMRIGHT", -3, 2)
+      row.Sources = button(row, "Sources", 54, function() showItem(row.item) end)
+      row.Sources:SetPoint("RIGHT", row.Toggle, "LEFT", -3, 0)
       row.NameButton = CreateFrame("Button", nil, row)
       row.NameButton:SetPoint("TOPLEFT", 40, -2)
-      row.NameButton:SetPoint("BOTTOMRIGHT", row.Toggle, "LEFT", -5, -5)
+      row.NameButton:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -3, 25)
       row.Name = label(row.NameButton, "GameFontHighlightSmall", 0, 0)
       row.Name:SetPoint("BOTTOMRIGHT", 0, 0)
       row.Name:SetMaxLines(2)
@@ -538,7 +542,7 @@ local function renderComponentCatalog()
      row.Name:SetText(item.name)
      updateToggle(row)
      if not row:IsShown() then row:Show() end
-     y = y + 39
+     y = y + 56
     end
    end
   end
@@ -728,7 +732,12 @@ local function createPanel(frame)
  panel.ItemIcon:SetPoint("LEFT", panel.Back, "RIGHT", 6, 0)
  panel.SourceCounts = label(panel, "GameFontHighlight", 20, -78)
  panel.SourceEmpty = label(panel, "GameFontHighlight", 20, -82)
- panel.SourceEmpty:SetText("Ajoute un composant dans Ma collecte pour consulter ses sources.")
+ panel.SourceEmpty:SetText("Choisis un composant pour trouver ses sources.")
+ panel.SourceCatalog = button(panel, "Ouvrir le catalogue", 155, function()
+  showItem(nil)
+  panel.Catalog.Search:SetFocus()
+ end)
+ panel.SourceCatalog:SetPoint("TOPLEFT", 20, -108)
  local function stepSource(direction)
   local index = direction > 0 and 0 or #sourceOrder + 1
   for i, id in ipairs(sourceOrder) do
@@ -1020,6 +1029,7 @@ refresh = function()
   panel.ItemIcon:SetShown(showSource)
   panel.SourceCounts:SetShown(showSource)
   panel.SourceEmpty:SetShown(showSourcesTab and not activeItem)
+  panel.SourceCatalog:SetShown(showSourcesTab and not activeItem)
   local showNavigation = showSource and #ids > 0
   local itemIndex
   for index, id in ipairs(ids) do if id == activeItem then itemIndex = index; break end end
@@ -1136,6 +1146,7 @@ refresh = function()
     filter:SetPoint("TOPRIGHT", 0, -(i - 1) * 35)
     local isContinent = group.key:find("^continent:") ~= nil
     local icon = isContinent and "INV_Misc_Orb_01" or group.key == "craft" and "INV_Hammer_20"
+     or group.key == "personal" and "INV_Misc_LeatherScrap_02"
      or group.key == "all" and "INV_Misc_Book_09" or "INV_Misc_Map_01"
     filter.Text:SetText("|TInterface\\Icons\\"..icon..":14:14|t  "..group.name)
     filter.Count:SetText(tostring(#group.indices))
@@ -1264,7 +1275,7 @@ refresh = function()
     if hasSample then
      local observedRate = source.observedRate or 100 * source.obtained / source.observations
      rateBox.Value:SetText((("%.1f %%"):format(observedRate):gsub("%.", ",")))
-     rateBox.Sample:SetText(source.personalSkinning and ("%d sur %d dépeçages"):format(source.obtained, source.observations)
+     rateBox.Sample:SetText(source.personalSkinning and ("%d sur %d fenêtres de dépeçage"):format(source.obtained, source.observations)
       or source.obtained and ("%d obtention(s) sur %d observations"):format(source.obtained, source.observations)
       or ("%d corps dépecés"):format(source.observations))
      rateBox.Source:SetText((source.provenance or "ForeverDB.net")..

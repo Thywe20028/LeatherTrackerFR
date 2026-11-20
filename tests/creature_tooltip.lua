@@ -55,7 +55,7 @@ assert(#lines == 1 and not strip:IsShown())
 unit(876543, "Non dépeçable")
 assert(#lines == 2 and not strip:IsShown())
 unit(3636)
-assert(strip:IsShown() and lines[2] == "Dépeçable" and lines[3] == "Dépeçage : — / 144")
+assert(strip:IsShown() and lines[2] == "Dépeçable" and lines[3] == "Dépeçage : seuil inconnu / 144")
 unit(4007, nil)
 assert(#lines == 3 and lines[2] == "Non dépeçable" and lines[3]:match("^%s+$") and strip:IsShown())
 assert(frames[4].itemID == 1081 and frames[5].itemID == 1210 and frames[6].itemID == 1475)
@@ -64,22 +64,22 @@ local level, guid
 function UnitLevel() return level end
 function UnitGUID() return guid end
 guid = "Creature-0-0-0-0-3636-0000"
-for _, scenario in ipairs({{1, 1}, {10, 1}, {11, 10}, {17, 70}, {20, 100}, {21, 105}, {60, 300}}) do
- level = scenario[1]
+for _, creatureLevel in ipairs({1, 10, 11, 17, 20, 21, 60}) do
+ level = creatureLevel
  unit(3636)
- assert(lines[3] == ("Dépeçage : ~%d / 144"):format(scenario[2]))
+ assert(lines[3] == "Dépeçage : seuil inconnu / 144")
 end
 unit(3636, "Dépeçage (125)")
 assert(lines[4] == "Dépeçage : 125 / 144")
 level = -1
 unit(3636)
-assert(lines[3] == "Dépeçage : — / 144")
+assert(lines[3] == "Dépeçage : seuil inconnu / 144")
 level = 17
 unit(4007)
 assert(#lines == 3 and lines[2] == "Non dépeçable" and strip:IsShown())
 guid = "Creature-0-0-0-0-4007-0000"
 unit(3636)
-assert(lines[3] == "Dépeçage : — / 144")
+assert(lines[3] == "Dépeçage : seuil inconnu / 144")
 guid = "Creature-0-0-0-0-876543-0000"
 local hostile, creatureType = true, "Humanoïde"
 function UnitIsEnemy() return hostile end
@@ -103,7 +103,7 @@ unit(876543)
 assert(lines[2] == "Dépeçable" and lines[3] == "Dépeçage : 73 / 144")
 level = 18
 unit(876543)
-assert(lines[3] == "Dépeçage : ~80 / 144")
+assert(lines[3] == "Dépeçage : seuil inconnu / 144")
 unit(876543, "Non dépeçable", {{leftText = "Non dépeçable"}})
 assert(#lines == 2 and LeatherTrackerFRDB.skinningObservations[876543][17] == 73)
 guid = "Creature-0-0-0-0-876544-0000"
@@ -111,7 +111,7 @@ unit(876544, "Dépeçable")
 assert(not LeatherTrackerFRDB.skinningObservations[876544])
 unit(876544, "Dépeçable", {{leftText = "Dépeçable"}})
 unit(876544)
-assert(lines[2] == "Dépeçable" and lines[3] == "Dépeçage : ~80 / 144")
+assert(lines[2] == "Dépeçable" and lines[3] == "Dépeçage : seuil inconnu / 144")
 local gameEvent = frames[3].scripts.OnEvent
 local corpseGUID = "Creature-0-0-0-0-876545-0001"
 local lootGUID, skill, now = corpseGUID, 65, 100
@@ -151,7 +151,7 @@ assert(learned.successes[17].samples == 2 and learned.successes[17].total == 150
 assert(learned.loot.samples == 2 and learned.loot.drops[2318] == 1 and learned.loot.drops[2934] == 1)
 corpseGUID = "Creature-0-0-0-0-876545-0000"
 unit(876545)
-assert(lines[3] == "Dépeçage : ~70 / 85" and lines[4] == "Réussites : moy. 75 (n=2)")
+assert(lines[3] == "Dépeçage : seuil inconnu / 85 · réussi à 65")
 gameEvent(nil, "UNIT_SPELLCAST_SENT", "player", "Créature", "cast3", 8613)
 gameEvent(nil, "UNIT_SPELLCAST_FAILED", "player", "cast3", 8613)
 lootGUID = corpseGUID

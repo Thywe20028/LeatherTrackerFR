@@ -274,6 +274,10 @@ for _, row in ipairs(catalogue.rows) do
  end
 end
 assert(result and result.Icon.texture == 102321 and result.Toggle.text == "+")
+result.Sources.scripts.OnClick()
+assert(collectionPanel.SourcePlaces:IsVisible() and not LeatherTrackerFRDB.collection.goals[2321])
+collectionPanel.CollectionTab.scripts.OnClick()
+assert(catalogue:IsVisible() and catalogue.Search:GetText() == "2321")
 result.Toggle.scripts.OnClick()
 assert(LeatherTrackerFRDB.collection.goals[2321] == 1 and result.Toggle.text == "−")
 result.Toggle.scripts.OnClick()

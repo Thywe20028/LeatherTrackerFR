@@ -71,7 +71,7 @@ SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local frame = _G.ProfessionsFrame
  local collection = _G.LeatherTrackerCollection
- print("LeatherTracker 0.7.32 | Métiers="..tostring(frame ~= nil)..
+ print("LeatherTracker 0.7.33 | Métiers="..tostring(frame ~= nil)..
   " | Ma collecte="..tostring(collection ~= nil and collection:IsVisible())..
   " | ongletVisible="..tostring(tab ~= nil and tab:IsVisible()))
 end

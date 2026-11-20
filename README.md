@@ -1,6 +1,6 @@
 # LeatherTracker FR
 
-Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.32**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
+Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.34**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
 
 ## Installation
 
@@ -14,12 +14,14 @@ Copier le contenu de `addon/` dans `Interface/AddOns/LeatherTrackerFR/`, puis ac
 
 ## Sources et repères
 
+Dans **Catalogue des composants**, le bouton **Sources** ouvre la fiche de l’objet directement. Le bouton **+** ajoute un objectif de collecte. Le filtre **Mes dépeçages** apparaît dans une fiche dès que tu as enregistré du butin personnel pour cet objet.
+
 Les fiches **Sources** distinguent les marchands, la fabrication, le butin et le dépeçage. Elles donnent la provenance et la taille d’échantillon lorsqu’elles sont disponibles. L’onglet **Options** permet de filtrer les repères et de choisir le mode automatique, manuel ou désactivé. MelloUI peut afficher les repères et la carte native offre un repli par point de passage pour les cartes compatibles. Le calque MelloUI dédié reste une [intégration proposée](docs/INTEGRATION_MELLOUI.md).
 
 ## Apprentissage en jeu
 
 - L’infobulle reconnaît les créatures dépeçables à partir des données natives et des observations. Le seuil exact fourni par le jeu a la priorité et `~` indique une estimation.
-- Un dépeçage réussi rattaché à un cadavre est mémorisé par espèce. La compétence moyenne des réussites est conservée par espèce et niveau dans la sauvegarde locale.
+- Un dépeçage réussi rattaché à un cadavre est mémorisé par espèce. Si le seuil natif est inconnu, l’infobulle indique la plus basse compétence relevée lors d’une réussite pour cette espèce et ce niveau. Les anciens relevés restent consultables dans Sources.
 - Les objets d’un butin complet et attribué au dépeçage alimentent **Mes dépeçages** dans les fiches **Sources**. Le taux compte une apparition par objet et par dépeçage. Exemple, 6 apparitions sur 40 donnent **15 % observés**. Le butin ordinaire et les sacs sont exclus.
 
 ## Vérification
