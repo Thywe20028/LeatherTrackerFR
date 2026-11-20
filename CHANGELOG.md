@@ -1,3 +1,9 @@
+## 0.7.38
+
+- Harmonise les bandeaux du catalogue, des filtres, des recettes et des options dans la fenêtre Métiers.
+- Aligne le catalogue et les filtres sur une grille approximative 30/70. Les groupes Méthodes et Continents et zones se replient indépendamment.
+- Mémorise les replis du catalogue, de chaque fiche Sources et des réglages avancés de la carte.
+
 ## 0.7.37
 
 - Remplace les flèches typographiques par des textures, simplifie le sélecteur Mes suivis et distingue les composants non suivis.

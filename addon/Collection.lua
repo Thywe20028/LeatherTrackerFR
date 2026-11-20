@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.37"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.38"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -443,6 +443,31 @@ local function background(frame, red, green, blue)
  texture:SetColorTexture(red, green, blue, 0.97)
 end
 
+local function categoryBand(parent, text, handler)
+ local band = CreateFrame(handler and "Button" or "Frame", nil, parent)
+ band:SetHeight(24)
+ background(band, 0.15, 0.12, 0.085)
+ local divider = band:CreateTexture(nil, "BORDER")
+ divider:SetPoint("BOTTOMLEFT", 0, 0)
+ divider:SetPoint("BOTTOMRIGHT", 0, 0)
+ divider:SetHeight(1)
+ divider:SetColorTexture(0.36, 0.28, 0.16, 1)
+ band.Text = label(band, "GameFontNormalSmall", 6, -6)
+ band.Text:SetPoint("RIGHT", handler and -23 or -6, 0)
+ band.Text:SetWordWrap(false)
+ band.Text:SetText(text)
+ if handler then
+  local hover = band:CreateTexture(nil, "HIGHLIGHT")
+  hover:SetAllPoints()
+  hover:SetColorTexture(0.71, 0.49, 0.24, 0.15)
+  band.ToggleMark = label(band, "GameFontNormal", 0, 0)
+  band.ToggleMark:ClearAllPoints()
+  band.ToggleMark:SetPoint("RIGHT", -6, 0)
+  band:SetScript("OnClick", handler)
+ end
+ return band
+end
+
 local function input(parent, width, max)
  local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
  box:SetAutoFocus(false)
@@ -535,11 +560,11 @@ local function renderComponentCatalog()
   local header = catalog.headers[group.name]
   header:SetShown(#matching > 0)
   if #matching > 0 then
-   local open = query ~= "" or not catalog.folded[group.name]
+   local open = query ~= "" or not collection.catalogFolded[group.name]
    header:ClearAllPoints()
    header:SetPoint("TOPLEFT", 0, -y)
    header:SetPoint("TOPRIGHT", 0, -y)
-   header.Text:SetText((open and "− " or "+ ")..group.name)
+   header.ToggleMark:SetText(open and "-" or "+")
    local _, categoryIcon = itemInfo(group.icon)
    header.Icon:SetTexture(categoryIcon)
    y = y + 25
@@ -736,7 +761,7 @@ local function createPanel(frame)
  catalog:SetWidth(210)
  background(catalog, 0.12, 0.095, 0.075)
  label(catalog, "GameFontNormal", 8, -7):SetText("Catalogue des composants")
- catalog.rows, catalog.headers, catalog.folded = {}, {}, {}
+ catalog.rows, catalog.headers = {}, {}
  local search = input(catalog, 1, 255)
  catalog.Search = search
  search:SetPoint("TOPLEFT", 10, -28)
@@ -759,32 +784,24 @@ local function createPanel(frame)
  catalog.Empty = label(catalog.Body, "GameFontHighlightSmall", 5, -4)
  catalog.Empty:SetText("Aucun composant trouvé.")
  for _, group in ipairs(componentGroups) do
-  local header = CreateFrame("Button", nil, catalog.Body)
-  header:SetHeight(23)
-  background(header, 0.19, 0.155, 0.105)
-  local hover = header:CreateTexture(nil, "HIGHLIGHT")
-  hover:SetAllPoints()
-  hover:SetColorTexture(0.71, 0.49, 0.24, 0.18)
-  header.Icon = header:CreateTexture(nil, "ARTWORK")
-  header.Icon:SetSize(17, 17)
-  header.Icon:SetPoint("LEFT", 4, 0)
-  header.Text = label(header, "GameFontNormalSmall", 25, -5)
-  header.Text:SetPoint("RIGHT", -5, 0)
-  header.Text:SetWordWrap(false)
-  header:SetScript("OnClick", function()
-   catalog.folded[group.name] = not catalog.folded[group.name]
+  local header = categoryBand(catalog.Body, group.name, function()
+   collection.catalogFolded[group.name] = not collection.catalogFolded[group.name]
    catalog.renderedRevision = nil
    renderComponentCatalog()
   end)
+  header.Icon = header:CreateTexture(nil, "ARTWORK")
+  header.Icon:SetSize(17, 17)
+  header.Icon:SetPoint("LEFT", 4, 0)
+  header.Text:SetPoint("TOPLEFT", 25, -6)
   catalog.headers[group.name] = header
  end
  catalog.Scroll:SetScript("OnSizeChanged", function(_, width)
   catalog.Body:SetWidth(math.max(width, 1))
  end)
  panel:SetScript("OnSizeChanged", function(_, width)
-  catalog:SetWidth(math.max(120, (width - 64) * 0.32))
+  catalog:SetWidth(math.max(120, (width - 64) * 0.30))
   if panel.CompactControl then panel.CompactControl:SetWidth(width < 500 and 82 or 128) end
-  if panel.SourcePlaces then panel.SourcePlaces:SetWidth(math.max(120, (width - 64) * 0.27)) end
+  if panel.SourcePlaces then panel.SourcePlaces:SetWidth(math.max(120, (width - 64) * 0.30)) end
   pendingItemRefresh = true
  end)
  panel.Back = button(panel, "<", 26, function() showItem(nil) end)
@@ -904,7 +921,9 @@ local function createPanel(frame)
  backOptions:SetPoint("TOPRIGHT", -23, 0)
  panel.OptionsBack = backOptions
  local function section(text, y)
-  label(settingsBody, "GameFontNormal", 8, y):SetText(text)
+  local band = categoryBand(settingsBody, text)
+  band:SetPoint("TOPLEFT", 8, y + 5)
+  band:SetPoint("TOPRIGHT", -8, y + 5)
  end
  local function help(widget, text)
   widget:SetScript("OnEnter", function(self)
@@ -966,7 +985,7 @@ local function createPanel(frame)
  advanced:SetHeight(181)
  mapControls.advanced = advanced
  local advancedButton = button(settingsBody, "Réglages avancés de la carte", 216, function()
-  mapControls.advancedOpen = not mapControls.advancedOpen
+  collection.map.advancedOpen = not collection.map.advancedOpen
   refresh()
  end)
  advancedButton:SetPoint("TOPLEFT", 8, -309)
@@ -996,14 +1015,18 @@ local function createPanel(frame)
  lower:SetHeight(186)
  mapControls.lower = lower
  mapControls.settingsBody = settingsBody
- label(lower, "GameFontNormal", 8, 0):SetText("Apprentissage du dépeçage")
+ local learningBand = categoryBand(lower, "Apprentissage du dépeçage")
+ learningBand:SetPoint("TOPLEFT", 8, 5)
+ learningBand:SetPoint("TOPRIGHT", -8, 5)
  setting("learning", "Mémoriser mes dépeçages", -19, function()
   addon.SetSkinningLearningEnabled(LeatherTrackerFRDB.skinningLearningDisabled == true)
  end, "Enregistre les dépeçages observés pour compléter les fiches Sources.", lower)
  mapControls.learningState = label(lower, "GameFontHighlightSmall", 8, -52)
  mapControls.learningState:SetPoint("TOPRIGHT", -8, -52)
  mapControls.learningState:SetText("")
- label(lower, "GameFontNormal", 8, -100):SetText("Informations")
+ local infoBand = categoryBand(lower, "Informations")
+ infoBand:SetPoint("TOPLEFT", 8, -95)
+ infoBand:SetPoint("TOPRIGHT", -8, -95)
  label(lower, "GameFontHighlight", 8, -120):SetText("LeatherTracker FR  ·  "..version)
  mapControls.openLayers = button(lower, "Ouvrir les calques MelloUI", 240, function()
   local module = mapLayersModule()
@@ -1039,12 +1062,13 @@ local function createPanel(frame)
  link:SetScript("OnEscapePressed", function(self) self:Hide() end)
  link:SetScript("OnEditFocusLost", function(self) self:Hide() end)
  link:Hide()
- local recipeHeader = button(list, "", 222, function()
+ local recipeHeader = categoryBand(list, "Recettes utilisant ce composant", function()
   local state = sourceSelection[activeItem]
   state.recipesOpen = not state.recipesOpen
   refresh()
  end)
  recipeHeader:SetPoint("TOPLEFT", 7, 0)
+ recipeHeader:SetPoint("TOPRIGHT", -7, 0)
  panel.SourceRecipes = recipeHeader
  panel.SourceRecipeRows = {}
  local function changeRecipePage(delta)
@@ -1085,10 +1109,19 @@ local function createPanel(frame)
  placeScroll:SetScrollChild(placeBody)
  placeScroll:SetScript("OnSizeChanged", function(_, width) placeBody:SetWidth(math.max(width, 1)) end)
  places.Scroll, places.Body = placeScroll, placeBody
- places.Method = label(placeBody, "GameFontNormalSmall", 4, -4)
- places.Method:SetText("Méthode")
- places.Location = label(placeBody, "GameFontNormalSmall", 4, -4)
- places.Location:SetText("Localisation")
+ local function filterBand(key, title)
+  local band = categoryBand(placeBody, title, function()
+   local state = sourceSelection[activeItem]
+   state[key] = not state[key]
+   refresh()
+  end)
+  return band
+ end
+ places.Method = filterBand("methodsFolded", "Méthodes")
+ places.Location = filterBand("locationsFolded", "Continents et zones")
+ places.Method:SetPoint("TOPLEFT", 0, 0)
+ places.Method:SetPoint("TOPRIGHT", 0, 0)
+
  local searchBar = CreateFrame("Frame", nil, panel)
  panel.SourceSearchBar = searchBar
  searchBar:SetHeight(26)
@@ -1177,7 +1210,8 @@ local function renderSourceRecipes(state, records)
  native:Hide()
  header:SetShown(#records > 0)
  if #records == 0 then return 0 end
- header:SetText(("%s Utilisé dans les recettes (%d)"):format(state.recipesOpen and "-" or "+", #records))
+ header.Text:SetText(("Recettes utilisant ce composant (%d)"):format(#records))
+ header.ToggleMark:SetText(state.recipesOpen and "-" or "+")
  if not state.recipesOpen then return 33 end
  local pages = math.ceil(#records / recipePageSize)
  local page = math.min(pages, math.max(1, tonumber(state.recipePage) or 1))
@@ -1314,7 +1348,7 @@ refresh = function()
   end
   panel.Catalog:SetShown(showCollection)
   if showCollection then
-   panel.Catalog:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.32))
+   panel.Catalog:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.30))
    renderComponentCatalog()
   end
   panel.Back:SetShown(showSource)
@@ -1369,7 +1403,7 @@ refresh = function()
   panel.SourcePlaces:SetShown(showSource)
   panel.SourceSearchBar:SetShown(showSource)
   panel.SourceSort:SetText(sortSourcesByRate and "Tri : taux" or "Tri : nom")
-  if showSource then panel.SourcePlaces:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.27)) end
+  if showSource then panel.SourcePlaces:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.30)) end
   if not showSource then renderSourceRecipes({}, {}) end
   sourceHeading:SetShown(showSource)
   sourceFooter:SetShown(showSource)
@@ -1391,7 +1425,7 @@ refresh = function()
   if optionsOpen then
    local advancedAvailable = api ~= nil or (TomTom and type(TomTom.AddWaypoint) == "function")
     or (C_Map and type(C_Map.SetUserWaypoint) == "function")
-   local expanded = advancedAvailable and mapControls.advancedOpen
+   local expanded = advancedAvailable and collection.map.advancedOpen
    mapControls.advanced:SetShown(not not expanded)
    mapControls.advancedButton:SetShown(not not advancedAvailable)
    mapControls.advancedButton:SetText(expanded and "Masquer les réglages avancés" or "Réglages avancés de la carte")
@@ -1451,7 +1485,9 @@ refresh = function()
    for _, index in ipairs(selectedMethod and selectedMethod.indices or {}) do methodMatches[index] = true end
    sourceHeading:SetText(selectedGroup and selectedGroup.key ~= "all" and selectedGroup.name or "Toutes les sources")
    local places = panel.SourcePlaces
-   local methodY, locationY = 22, nil
+   local methodY, locationY = 26, nil
+   places.Method.ToggleMark:SetText(selection.methodsFolded and "+" or "-")
+   places.Location.ToggleMark:SetText(selection.locationsFolded and "+" or "-")
    places.Method:SetShown(#filters > 0)
    places.Location:SetShown(#filters > 0)
    for i, group in ipairs(filters) do
@@ -1464,6 +1500,9 @@ refresh = function()
      filter.Count = label(filter, "GameFontHighlightSmall", 0, 0)
      filter.Count:ClearAllPoints()
      filter.Count:SetPoint("RIGHT", -4, 0)
+     filter.Selected = filter:CreateTexture(nil, "BACKGROUND")
+     filter.Selected:SetAllPoints()
+     filter.Selected:SetColorTexture(0.44, 0.32, 0.14, 0.6)
      filter.Text:SetWordWrap(true)
      filter.Text:SetMaxLines(2)
      sourceFilters[i] = filter
@@ -1471,39 +1510,45 @@ refresh = function()
     local isMethod = group.rank < 2
     if not isMethod and not locationY then
      places.Location:ClearAllPoints()
-     places.Location:SetPoint("TOPLEFT", 4, -methodY - 8)
-     locationY = methodY + 28
+     places.Location:SetPoint("TOPLEFT", 0, -methodY - 5)
+     places.Location:SetPoint("TOPRIGHT", 0, -methodY - 5)
+     locationY = methodY + 31
     end
-    local y = isMethod and methodY or locationY
-    local height = isMethod and 24 or 34
-    filter:SetHeight(height)
-    if isMethod then methodY = y + height else locationY = y + height end
-    filter:ClearAllPoints()
-    filter:SetPoint("TOPLEFT", group.indent or 0, -y)
-    filter:SetPoint("TOPRIGHT", 0, -y)
-    local isContinent = group.key:find("^continent:") ~= nil
-    local icon = isContinent and "INV_Misc_Orb_01" or group.key == "method:Fabrication" and "INV_Hammer_20"
-     or group.key == "personal" and "INV_Misc_LeatherScrap_02"
-     or group.key == "all" and "INV_Misc_Book_09" or "INV_Misc_Map_01"
-    filter.Text:SetText("|TInterface\\Icons\\"..icon..":14:14|t  "..group.name)
-    filter.Count:SetText(tostring(#group.indices))
-    if selectedGroup == group or selectedMethod == group then
-     filter.Text:SetTextColor(1, 0.83, 0.43)
-    elseif isContinent then
-     filter.Text:SetTextColor(0.53, 0.85, 1)
-    else
-     filter.Text:SetTextColor(0.83, 0.87, 0.92)
-    end
-    filter:SetScript("OnClick", function()
-     if isMethod then
-      selection.method = group.key
+    local folded = (isMethod and selection.methodsFolded) or (not isMethod and selection.locationsFolded)
+    if not folded then
+     local y = isMethod and methodY or locationY
+     local height = isMethod and 24 or 34
+     filter:SetHeight(height)
+     if isMethod then methodY = y + height else locationY = y + height end
+     filter:ClearAllPoints()
+     filter:SetPoint("TOPLEFT", group.indent or 0, -y)
+     filter:SetPoint("TOPRIGHT", 0, -y)
+     local isContinent = group.key:find("^continent:") ~= nil
+     local icon = isContinent and "INV_Misc_Orb_01" or group.key == "method:Fabrication" and "INV_Hammer_20"
+      or group.key == "personal" and "INV_Misc_LeatherScrap_02"
+      or group.key == "all" and "INV_Misc_Book_09" or "INV_Misc_Map_01"
+     filter.Text:SetText("|TInterface\\Icons\\"..icon..":14:14|t  "..group.name)
+     filter.Count:SetText(tostring(#group.indices))
+     local selected = selectedGroup == group or selectedMethod == group
+     filter.Selected:SetShown(selected)
+     if selected then
+      filter.Text:SetTextColor(1, 0.83, 0.43)
+     elseif isContinent then
+      filter.Text:SetTextColor(0.53, 0.85, 1)
      else
-      selection.group = group.key
+      filter.Text:SetTextColor(0.83, 0.87, 0.92)
      end
-     scroll:SetVerticalScroll(0)
-     refresh()
-    end)
-    filter:Show()
+     filter:SetScript("OnClick", function()
+      if isMethod then
+       selection.method = group.key
+      else
+       selection.group = group.key
+      end
+      scroll:SetVerticalScroll(0)
+      refresh()
+     end)
+     filter:Show()
+    end
    end
    places.Body:SetHeight(locationY or methodY)
    local matches = {}
@@ -2029,6 +2074,7 @@ events:SetScript("OnEvent", function(_, event, id)
   LeatherTrackerFRDB.collection = LeatherTrackerFRDB.collection or {}
   collection = LeatherTrackerFRDB.collection
   lastSourceItem = itemID(collection.lastSourceItem)
+  collection.catalogFolded = type(collection.catalogFolded) == "table" and collection.catalogFolded or {}
   collection.sourceViews = type(collection.sourceViews) == "table" and collection.sourceViews or {}
   sourceSelection = collection.sourceViews
   sortSourcesByRate = collection.sortSourcesByRate == true

@@ -57,3 +57,9 @@ Tester à plusieurs résolutions et échelles UI, avec et sans MelloUI / Auction
 - Les filtres de méthode et de lieu se combinent. Les noms de zones peuvent occuper deux lignes.
 - **Détails** affiche les informations secondaires au survol. Un clic sélectionne l’adresse ForeverDB pour la copier avec le raccourci du système.
 - Dans **Options**, la commande des calques est visible lorsque le module de carte expose à la fois la catégorie et l’ouverture du panneau. Le diagnostic technique reste accessible via `/ltmapdebug`. La présence du calque reste à vérifier en jeu.
+
+## Ajustements 0.7.38
+
+Le catalogue, Sources et Options utilisent des bandeaux sombres à titres dorés. La navigation occupe environ 30 % de l’espace disponible, avec une largeur minimale. Les deux colonnes défilent indépendamment. Les groupes Méthodes et Continents et zones se replient indépendamment pour chaque composant, sans effacer les filtres actifs. La sélection utilise à la fois une couleur de texte et un fond distinct. Le catalogue et les réglages avancés mémorisent également leur état.
+
+Tester dans WoW Forever les bandeaux, les noms de zones sur deux lignes, les barres de défilement et la largeur des cartes à plusieurs échelles d’interface. Vérifier après `/reload` le repli, les filtres et le retour à Fabrication.

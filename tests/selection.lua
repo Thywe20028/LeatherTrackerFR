@@ -49,7 +49,9 @@ local function frame(parent)
   if visible then notifyHide(self) end
  end
  function widget:GetVerticalScrollRange() return 0 end
- function widget:GetVerticalScroll() return 0 end
+ function widget:GetVerticalScroll() return rawget(self, "scrollOffset") or 0 end
+ function widget:SetVerticalScroll(offset) self.scrollOffset = offset end
+ function widget:SetMaxLines(count) self.maxLines = count end
  function widget:SetText(value) self.text = value end
  function widget:GetText() return self.text end
  function widget:SetEnabled(value) self.enabled = value end
@@ -239,12 +241,32 @@ assert(openedRecipe == 100 and not collectionPanel:IsVisible())
 tab.mouseUp(tab, "LeftButton", true)
 collectionPanel.SourcesTab.scripts.OnClick()
 collectionPanel.SourceRecipes.scripts.OnClick()
+local places = collectionPanel.SourcePlaces
+local sourceState = LeatherTrackerFRDB.collection.sourceViews[6471]
+places.Method.scripts.OnClick()
+assert(sourceState.methodsFolded and not sourceState.locationsFolded)
+assert(places.Method.ToggleMark.text == "+" and places.Location.ToggleMark.text == "-")
+places.Location.scripts.OnClick()
+assert(sourceState.locationsFolded and places.Location.ToggleMark.text == "+")
+collectionEvents.OnEvent(nil, "PLAYER_LOGIN")
+assert(places.Method.ToggleMark.text == "+" and places.Location.ToggleMark.text == "+")
+places.Method.scripts.OnClick()
+places.Location.scripts.OnClick()
+assert(not sourceState.methodsFolded and not sourceState.locationsFolded)
+assert(places.Scroll ~= collectionPanel.Catalog.Scroll)
+places.Scroll:SetVerticalScroll(12)
+collectionPanel.Catalog.Scroll:SetVerticalScroll(28)
+assert(places.Scroll:GetVerticalScroll() == 12 and collectionPanel.Catalog.Scroll:GetVerticalScroll() == 28)
 local firstRow = {}
 for _, widget in ipairs(frames) do
  if type(rawget(widget, "Info")) == "table" and widget:IsVisible() then
   firstRow[#firstRow + 1] = widget
  end
 end
+local resultScroll = firstRow[1]:GetParent():GetParent()
+assert(resultScroll ~= places.Scroll)
+resultScroll:SetVerticalScroll(21)
+assert(places.Scroll:GetVerticalScroll() == 12)
 assert(#firstRow >= 3 and firstRow[1].point[3] == firstRow[2].point[3]
  and firstRow[1].point[2] ~= firstRow[2].point[2] and firstRow[3].point[3] < firstRow[1].point[3])
 local results = firstRow[1]:GetParent()
@@ -334,7 +356,8 @@ for _, widget in ipairs(frames) do
   break
  end
 end
-assert(foundZone).scripts.OnClick()
+assert(assert(foundZone).Text.maxLines == 2)
+foundZone.scripts.OnClick()
 filterSources("Vendor-Tron 1000")
 assert(table.concat(sourceDetails().details, " "):find("60.2 / 38.2", 1, true))
 button("Voir sur la carte").scripts.OnClick()
