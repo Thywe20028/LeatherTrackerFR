@@ -1,9 +1,14 @@
 ## Interface: 16001
 ## Title: LeatherTracker FR
-## Notes: Onglet natif de metier via ForeverCore pour WoW Forever.
+## Notes: Panneau autonome de suivi du Travail du cuir pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.2.3
+## Version: 0.7.32
 ## SavedVariables: LeatherTrackerFRDB
-## Dependencies: ForeverCore
+## OptionalDeps: ForeverDB, MelloUI_Map
 Main.lua
+SourceData.lua
+WarcraftForeverData.lua
+ComponentData.lua
+CreatureTooltip.lua
+Collection.lua
 Tracking.lua

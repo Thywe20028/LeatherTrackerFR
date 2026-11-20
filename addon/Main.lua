@@ -17,7 +17,7 @@ bg:SetAllPoints()
 bg:SetColorTexture(0.06, 0.08, 0.12, 0.96)
 local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 title:SetPoint("TOPLEFT", 16, -16)
-title:SetText("LeatherTracker FR - 0.1.1 (test)")
+title:SetText("LeatherTracker FR - Diagnostic")
 local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", -4, -4)
 local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
@@ -166,7 +166,8 @@ end
 SLASH_LEATHERTRACKERFR1 = "/ltfr"
 SlashCmdList.LEATHERTRACKERFR = function(msg)
  local action, arg = (msg or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
- if action == "api" then show(status())
+ if action == "" then SlashCmdList.LEATHERTRACKERPANEL()
+ elseif action == "api" then show(status())
  elseif action == "debug" then show(debugInfo())
  elseif action == "scan" then show(scan())
  elseif action == "id" then

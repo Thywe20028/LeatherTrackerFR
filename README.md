@@ -1,21 +1,49 @@
 # LeatherTracker FR
 
-Assistant de Travail du cuir pour **WoW Forever 1.60.1**. La branche `develop` contient l’onglet intégré aux métiers, basé sur la version 0.2.3 et nécessitant **ForeverCore v1.15.2**.
+Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.32**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
 
-## Installation et utilisation
+## Installation
 
-1. Installez et activez ForeverCore v1.15.2.
-2. Copiez les trois fichiers du dossier `addon/` dans `Interface/AddOns/LeatherTrackerFR/`, puis activez LeatherTracker FR.
-3. Ouvrez Travail du cuir, sélectionnez une recette dans Fabrication, puis ouvrez l’onglet latéral LeatherTracker et cliquez sur **Suivre la recette**. Le suivi reste enregistré jusqu’à son arrêt. Pour en choisir une autre, arrêtez le suivi en cours, puis sélectionnez la nouvelle recette dans Fabrication.
+Copier le contenu de `addon/` dans `Interface/AddOns/LeatherTrackerFR/`, puis activer LeatherTracker FR dans le jeu. ForeverDB, MelloUI et TomTom servent d’intégrations facultatives.
 
-La page propose quatre sections. Suivi et Matériaux affichent les quantités par fabrication et les quantités en sac lorsque le client les fournit. Sources et Carte indiquent l’état des données et de l’intégration. Les variantes de composants, les quantités pour plusieurs fabrications, le catalogue de base et les marqueurs MelloUI figurent dans la [feuille de route](docs/ROADMAP.md).
+## Ma collecte
 
-`/ltstatus` indique si l’onglet est enregistré. `/ltpanel` permet de basculer entre LeatherTracker et Fabrication. `/ltfr debug` et `/ltfr scan` aident à examiner la sélection native.
+- Ouvrir une recette et cliquer sur **+** à côté d’un ingrédient, ou ajouter un objet depuis le catalogue, son lien ou son identifiant.
+- Ouvrir **Ma collecte** via l’icône LeatherTracker dans Métiers ou la commande `/ltpanel`. **Fabrication** permet de retrouver la recette précédente.
+- Modifier un objectif avec **− / +** ou saisir la quantité et valider avec Entrée. Le stock est lu dans les sacs. Le panneau compact permet de suivre la collecte à l’écran.
 
-## État des vérifications
+## Sources et repères
 
-- **En jeu, rapporté par Shana** — l’onglet natif s’ouvre et se ferme normalement avec ForeverCore v1.15.2. La version graphique 0.3.1 a été essayée, jugée trop vide, et la sélection restait à fiabiliser.
-- **Reproductible hors jeu** — depuis la racine, lancez `texlua tests/selection.lua` pour exercer la sélection avec des API simulées. Le [résumé](docs/RESUME_PROJET.md) détaille les scénarios et l’état de GitHub.
-- **À vérifier en jeu sur le nouveau code** — navigation native, sélection rapide, changement de métier, quantités en sac et persistance. Voir la [feuille de route](docs/ROADMAP.md).
+Les fiches **Sources** distinguent les marchands, la fabrication, le butin et le dépeçage. Elles donnent la provenance et la taille d’échantillon lorsqu’elles sont disponibles. L’onglet **Options** permet de filtrer les repères et de choisir le mode automatique, manuel ou désactivé. MelloUI peut afficher les repères et la carte native offre un repli par point de passage pour les cartes compatibles. Le calque MelloUI dédié reste une [intégration proposée](docs/INTEGRATION_MELLOUI.md).
 
-[Changelog](CHANGELOG.md) · [Résumé du projet](docs/RESUME_PROJET.md) · [Feuille de route](docs/ROADMAP.md) · [Intégration MelloUI](docs/INTEGRATION_MELLOUI.md)
+## Apprentissage en jeu
+
+- L’infobulle reconnaît les créatures dépeçables à partir des données natives et des observations. Le seuil exact fourni par le jeu a la priorité et `~` indique une estimation.
+- Un dépeçage réussi rattaché à un cadavre est mémorisé par espèce. La compétence moyenne des réussites est conservée par espèce et niveau dans la sauvegarde locale.
+- Les objets d’un butin complet et attribué au dépeçage alimentent **Mes dépeçages** dans les fiches **Sources**. Le taux compte une apparition par objet et par dépeçage. Exemple, 6 apparitions sur 40 donnent **15 % observés**. Le butin ordinaire et les sacs sont exclus.
+
+## Vérification
+
+Lancer `texlua tests/selection.lua` et `texlua tests/creature_tooltip.lua` depuis la racine du dépôt. Les tests simulent la collecte, les intégrations cartographiques et l’apprentissage du dépeçage. L’affichage, la détection du butin et le ramassage automatique restent à valider dans WoW Forever.
+
+Toutes les nouveautés sont détaillées dans le [journal des versions](CHANGELOG.md).
+
+## Connexions ForeverDB
+
+Si l’addon ForeverDB est installé, LeatherTracker lit ses observations locales pour les objets consultés. Les fréquences sont affichées avec leur taille d’échantillon. Aucune donnée locale n’est envoyée et l’addon ne déduit pas de coordonnées d’une observation.
+
+L’API HTTP s’utilise hors du jeu. La documentation et le crédit figurent sur [ForeverDB.net](https://foreverdb.net/developers). La clé est lue depuis `FOREVERDB_API_KEY` ou saisie sans écho. Ne pas placer de clé dans les fichiers Lua.
+
+```powershell
+py scripts/foreverdb_probe.py 6471 --output ecailles.json
+py scripts/foreverdb_probe.py --vendor 12245 --output marchand.json
+py scripts/foreverdb_probe.py --skinning-zone 1413 --output depecage.json
+```
+
+Examiner les réponses et conserver dans un JSON indexé par identifiant d’objet les champs confirmés. Chaque fiche requiert `name`, `method` et `provenance`. Un repère requiert `map`, `x` et `y` dans l’intervalle 0–1 pour les coordonnées, ainsi que `locationSource`. Les champs `zone`, `level`, `skill`, `rate` et `context` sont facultatifs. L’exporteur valide les champs et ouvre une étape de vérification explicite avant publication.
+
+```powershell
+py scripts/export_sources.py sources-validees.json addon/SourceData.lua
+```
+
+Copier le fichier produit dans le dossier LeatherTrackerFR de WoW. Les sources initiales restent disponibles et le fichier généré les complète.

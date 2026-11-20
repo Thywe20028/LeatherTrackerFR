@@ -1,12 +1,26 @@
-# Feuille de route
+# LeatherTracker FR — feuille de route
 
-| Ordre | Étape | Critère de validation |
-| --- | --- | --- |
-| 1 | Sélection et navigation | Sous WoW Forever 1.60.1 avec ForeverCore v1.15.2, sélectionner A puis B et ouvrir l’onglet immédiatement. Vérifier B, le retour à Fabrication, la fermeture normale depuis les deux pages, la réouverture et le changement de métier. Tester avec SkillUp lorsqu’il est installé. |
-| 2 | Suivi et quantités | Comparer les composants de la recette 7955 puis d’autres recettes avec Fabrication et les sacs. Tester les variantes, les composants facultatifs, le filtre des manquants, les mises à jour de sacs et la sauvegarde après rechargement. Ajouter le nombre de fabrications et calculer les besoins et manquants à partir de cette quantité. |
-| 3 | Catalogue de base | Recenser les ingrédients par ID et nom français dans le client. Enregistrer la provenance et la version de chaque donnée. Confirmer les conditions d’utilisation avant d’importer des données externes. |
-| 4 | Créatures, lieux et butin | Renseigner le type de source, le PNJ ou la créature, la zone et les coordonnées vérifiées. Documenter la source, la version et l’échantillon des taux mesurés. Afficher « inconnu » pour un taux invérifiable. |
-| 5 | Marqueurs MelloUI | Valider l’API de carte dans le client, afficher les coordonnées vérifiées et tester les filtres par recette et matériaux de base, l’effacement des repères et l’absence de MelloUI. Voir [l’intégration MelloUI](INTEGRATION_MELLOUI.md). |
-| 6 | Addon autonome | Évaluer le prototype 0.3.2 dans un environnement sans ForeverCore. Reprendre les tests de sélection, navigation, sauvegarde et validation des quantités avant d’intégrer cette piste sur `develop`. |
+Cible : WoW Forever 1.60.1. L’interface de fabrication reste native. LeatherTracker suit des composants choisis dans les recettes ou ajoutés manuellement. Il affiche **Ma collecte** dans la fenêtre Métiers.
 
-Pour chaque essai en jeu, consigner le commit ou ZIP, les versions du client et des dépendances, le scénario, le résultat et les captures disponibles.
+## État de la version 0.7.32
+
+- Collecte intégrée à Métiers, catalogue, liste d’objectifs et suivi compact.
+- Fiches Sources avec provenance, échantillons et repères par type de source.
+- Infobulles de dépeçage avec seuil exact ou estimé et icônes de butin.
+- Apprentissage local à partir du tooltip natif et des dépeçages réussis. Fréquences personnelles d’obtention par espèce.
+- Intégrations facultatives ForeverDB, MelloUI et TomTom. Repli par point de passage sur la carte native compatible.
+- Tests Lua de collecte, de cartographie et d’apprentissage.
+
+## À vérifier dans WoW Forever
+
+- [ ] Vérifier le retour aux onglets natifs, le placement des contrôles à différentes échelles et la conservation des objectifs après mise à jour.
+- [ ] Depuis les deux fiches d’écailles, ouvrir l’accès aux Cavernes sur MelloUI. Activer les deux composants en mode automatique et vérifier le repère commun et son infobulle.
+- [ ] Vérifier le masquage des objectifs atteints et le retrait des seuls repères LeatherTracker lorsque la carte est désactivée.
+
+## Données et calques
+
+- [ ] Valider les positions de créatures, les seuils de dépeçage et les taux Forever avant de les afficher. Le point des Cavernes est un accès au donjon.
+- [ ] Vérifier en jeu le calque proposé **LeatherTracker FR** sous **Quêtes**. Sans le correctif, les repères restent dans le calque commun des autres addons.
+- [ ] Exécuter une requête authentifiée et examiner la réponse réelle avant d’automatiser la transformation du schéma ForeverDB.
+
+[Accès aux Cavernes — Questing.wiki](https://questing.wiki/wow-forever/dungeons/wailing-caverns/) · [API cartographique MelloUI](https://github.com/MelloCro/MelloUI/blob/8fe0da73b0d56030bf5a7ed587b173eed19d1f38/MelloUI_Map/MapAddonPins.lua#L1276)

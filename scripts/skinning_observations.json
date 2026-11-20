@@ -1,0 +1,480 @@
+{
+  "783": [
+    {
+      "name": "Deviate Crocolisk",
+      "id": 5053,
+      "level": "–",
+      "p": 13.6,
+      "n": 22,
+      "loc": "Crag of the Everliving, Wailing Caverns; Screaming Gully, Wailing Caverns"
+    },
+    {
+      "name": "Sunscale Scytheclaw",
+      "id": 3256,
+      "level": "16–18",
+      "p": 9.4,
+      "n": 64,
+      "loc": "The Barrens; Honor's Stand, The Barrens; Raptor Grounds, The Barrens"
+    },
+    {
+      "name": "Moonrage Darksoul",
+      "id": 1782,
+      "level": "13–14",
+      "p": 8.7,
+      "n": 23,
+      "loc": "North Tide's Hollow, Silverpine Forest"
+    },
+    {
+      "name": "Deviate Ravager",
+      "id": 3636,
+      "level": "–",
+      "p": 6.9,
+      "n": 29,
+      "loc": "Wailing Caverns"
+    },
+    {
+      "name": "Goretusk",
+      "id": 157,
+      "level": "14–15",
+      "p": 6.3,
+      "n": 32,
+      "loc": "Stendel's Pond, Westfall; The Molsen Farm, Westfall"
+    },
+    {
+      "name": "Zhevra Runner",
+      "id": 3242,
+      "level": "13–14",
+      "p": 5.4,
+      "n": 37,
+      "loc": "The Barrens"
+    }
+  ],
+  "2318": [
+    {
+      "name": "Deviate Crocolisk",
+      "id": 5053,
+      "level": "–",
+      "p": 68.2,
+      "n": 22,
+      "loc": "Wailing Caverns; Pit of Fangs, Wailing Caverns; Crag of the Everliving, Wailing Caverns; Screaming Gully, Wailing Caverns"
+    },
+    {
+      "name": "Sunscale Screecher",
+      "id": 3255,
+      "level": "13–15",
+      "p": 66.7,
+      "n": 33,
+      "loc": "The Barrens; Grol'dom Farm, The Barrens; The Forgotten Pools, The Barrens; The Dry Hills, The Barrens; The Stagnant Oasis, The Barrens; Gold Road, The Barrens"
+    },
+    {
+      "name": "Oasis Snapjaw",
+      "id": 3461,
+      "level": "15–16",
+      "p": 65.4,
+      "n": 26,
+      "loc": "Lushwater Oasis, The Barrens; The Stagnant Oasis, The Barrens"
+    },
+    {
+      "name": "Fleeting Plainstrider",
+      "id": 3246,
+      "level": "12–13",
+      "p": 64.7,
+      "n": 34,
+      "loc": "The Barrens; Thorn Hill, The Barrens; Grol'dom Farm, The Barrens; The Forgotten Pools, The Barrens; Dreadmist Peak, The Barrens"
+    },
+    {
+      "name": "Moonrage Glutton",
+      "id": 1779,
+      "level": "12–13",
+      "p": 64.3,
+      "n": 56,
+      "loc": "Silverpine Forest; North Tide's Hollow, Silverpine Forest; Deep Elem Mine, Silverpine Forest"
+    },
+    {
+      "name": "Mottled Worg",
+      "id": 1766,
+      "level": "11–12",
+      "p": 64.3,
+      "n": 28,
+      "loc": "Silverpine Forest; The Dead Field, Silverpine Forest; The Ivar Patch, Silverpine Forest; Malden's Orchard, Silverpine Forest"
+    }
+  ],
+  "2319": [
+    {
+      "name": "Cave Yeti",
+      "id": 2248,
+      "level": "30–31",
+      "p": 74.3,
+      "n": 113,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Snapjaw",
+      "id": 2408,
+      "level": "30–31",
+      "p": 70.8,
+      "n": 24,
+      "loc": "Hillsbrad Foothills; Alterac Mountains; Chillwind Point, Alterac Mountains"
+    },
+    {
+      "name": "Crystal Spine Basilisk",
+      "id": 689,
+      "level": "34–35",
+      "p": 56.7,
+      "n": 30,
+      "loc": "Stranglethorn Vale; The Savage Coast, Stranglethorn Vale"
+    },
+    {
+      "name": "Ferocious Yeti",
+      "id": 2249,
+      "level": "31–32",
+      "p": 49.3,
+      "n": 69,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Deviate Guardian",
+      "id": 3637,
+      "level": "–",
+      "p": 35.3,
+      "n": 34,
+      "loc": "Wailing Caverns; Screaming Gully, Wailing Caverns"
+    },
+    {
+      "name": "Deviate Ravager",
+      "id": 3636,
+      "level": "–",
+      "p": 31,
+      "n": 29,
+      "loc": "Wailing Caverns; Screaming Gully, Wailing Caverns"
+    }
+  ],
+  "2934": [
+    {
+      "name": "Mountain Cougar",
+      "id": 2961,
+      "level": "3",
+      "p": 100,
+      "n": 49,
+      "loc": "Red Cloud Mesa, Mulgore"
+    },
+    {
+      "name": "Plainstrider",
+      "id": 2955,
+      "level": "1–2",
+      "p": 100,
+      "n": 47,
+      "loc": "Red Cloud Mesa, Mulgore"
+    },
+    {
+      "name": "Battleboar",
+      "id": 2966,
+      "level": "3–4",
+      "p": 100,
+      "n": 35,
+      "loc": "Red Cloud Mesa, Mulgore; Kodo Rock, Mulgore"
+    },
+    {
+      "name": "Scorpid Worker",
+      "id": 3124,
+      "level": "3",
+      "p": 100,
+      "n": 29,
+      "loc": "Valley of Trials, Durotar"
+    },
+    {
+      "name": "Bristleback Battleboar",
+      "id": 2954,
+      "level": "4–5",
+      "p": 100,
+      "n": 26,
+      "loc": "Red Cloud Mesa, Mulgore; Brambleblade Ravine, Mulgore"
+    },
+    {
+      "name": "Ursera Scavenger",
+      "id": 250937,
+      "level": "4",
+      "p": 100,
+      "n": 23,
+      "loc": "Thendal Cave, Zephras Isle"
+    }
+  ],
+  "4232": [
+    {
+      "name": "Deviate Guardian",
+      "id": 3637,
+      "level": "–",
+      "p": 8.8,
+      "n": 34,
+      "loc": "Wailing Caverns; Screaming Gully, Wailing Caverns"
+    },
+    {
+      "name": "Cave Yeti",
+      "id": 2248,
+      "level": "30–31",
+      "p": 7.1,
+      "n": 113,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Ferocious Yeti",
+      "id": 2249,
+      "level": "31–32",
+      "p": 4.3,
+      "n": 69,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Snapjaw",
+      "id": 2408,
+      "level": "30–31",
+      "p": 4.2,
+      "n": 24,
+      "loc": "Chillwind Point, Alterac Mountains"
+    },
+    {
+      "name": "Deviate Ravager",
+      "id": 3636,
+      "level": "–",
+      "p": 3.4,
+      "n": 29,
+      "loc": "Wailing Caverns"
+    },
+    {
+      "name": "Sunscale Scytheclaw",
+      "id": 3256,
+      "level": "16–18",
+      "p": 3.1,
+      "n": 64,
+      "loc": "The Barrens; Southern Barrens, The Barrens"
+    }
+  ],
+  "4234": [
+    {
+      "name": "Ferocious Yeti",
+      "id": 2249,
+      "level": "31–32",
+      "p": 46.4,
+      "n": 69,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Crystal Spine Basilisk",
+      "id": 689,
+      "level": "34–35",
+      "p": 36.7,
+      "n": 30,
+      "loc": "Stranglethorn Vale; The Savage Coast, Stranglethorn Vale"
+    },
+    {
+      "name": "Snapjaw",
+      "id": 2408,
+      "level": "30–31",
+      "p": 20.8,
+      "n": 24,
+      "loc": "Alterac Mountains; Chillwind Point, Alterac Mountains"
+    },
+    {
+      "name": "Cave Yeti",
+      "id": 2248,
+      "level": "30–31",
+      "p": 16.8,
+      "n": 113,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Stranglethorn Tiger",
+      "id": 682,
+      "level": "32–33",
+      "p": 100,
+      "n": 2,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Cold Eye Basilisk",
+      "id": 690,
+      "level": "40",
+      "p": 100,
+      "n": 2,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Panther",
+      "id": 736,
+      "level": "32–33",
+      "p": 100,
+      "n": 1,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Sarltooth",
+      "id": 1353,
+      "level": "29",
+      "p": 100,
+      "n": 1,
+      "loc": "Whelgar's Excavation Site, Wetlands"
+    },
+    {
+      "name": "Stranglethorn Tigress",
+      "id": 772,
+      "level": "37–38",
+      "p": 88.9,
+      "n": 9,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Mountain Lion",
+      "id": 2406,
+      "level": "32–33",
+      "p": 83.3,
+      "n": 12,
+      "loc": "Corrahn's Dagger, Alterac Mountains; Chillwind Point, Alterac Mountains"
+    },
+    {
+      "name": "Shadowmaw Panther",
+      "id": 684,
+      "level": "37–38",
+      "p": 70,
+      "n": 10,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Elder Stranglethorn Tiger",
+      "id": 1085,
+      "level": "34–35",
+      "p": 60,
+      "n": 10,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Hulking Mountain Lion",
+      "id": 2407,
+      "level": "33–34",
+      "p": 54.5,
+      "n": 11,
+      "loc": "Corrahn's Dagger, Alterac Mountains; Chillwind Point, Alterac Mountains"
+    },
+    {
+      "name": "Nightbane Vile Fang",
+      "id": 206,
+      "level": "29–30",
+      "p": 50,
+      "n": 4,
+      "loc": "Duskwood"
+    },
+    {
+      "name": "Aku'mai Snapjaw",
+      "id": 4825,
+      "level": "–",
+      "p": 50,
+      "n": 2,
+      "loc": "Aku'mai's Lair, Blackfathom Deeps"
+    },
+    {
+      "name": "Maddened Rotclaw",
+      "id": 271334,
+      "level": "25–26",
+      "p": 50,
+      "n": 2,
+      "loc": "The Green Belt, Wetlands"
+    },
+    {
+      "name": "Elder Razormaw",
+      "id": 1019,
+      "level": "29",
+      "p": 50,
+      "n": 2,
+      "loc": "Raptor Ridge, Wetlands"
+    },
+    {
+      "name": "Snapjaw Crocolisk",
+      "id": 1152,
+      "level": "35–36",
+      "p": 40,
+      "n": 15,
+      "loc": "Stranglethorn Vale; Lake Nazferiti, Stranglethorn Vale"
+    },
+    {
+      "name": "Nightbane Worgen",
+      "id": 898,
+      "level": "26–27",
+      "p": 25,
+      "n": 4,
+      "loc": "Brightwood Grove, Duskwood"
+    },
+    {
+      "name": "Lashtail Raptor",
+      "id": 686,
+      "level": "35–36",
+      "p": 20,
+      "n": 5,
+      "loc": "The Savage Coast, Stranglethorn Vale"
+    },
+    {
+      "name": "Nightbane Tainted One",
+      "id": 920,
+      "level": "30–31",
+      "p": 20,
+      "n": 5,
+      "loc": "Duskwood"
+    },
+    {
+      "name": "Highland Razormaw",
+      "id": 1018,
+      "level": "27–28",
+      "p": 16.7,
+      "n": 6,
+      "loc": "Raptor Ridge, Wetlands"
+    }
+  ],
+  "4235": [
+    {
+      "name": "Snapjaw",
+      "id": 2408,
+      "level": "30–31",
+      "p": 4.2,
+      "n": 24,
+      "loc": "Alterac Mountains"
+    },
+    {
+      "name": "Cave Yeti",
+      "id": 2248,
+      "level": "30–31",
+      "p": 1.8,
+      "n": 113,
+      "loc": "Darrow Hill, Hillsbrad Foothills"
+    },
+    {
+      "name": "Old Serra'kis",
+      "id": 4830,
+      "level": "–",
+      "p": 100,
+      "n": 1,
+      "loc": "The Forgotten Pool, Blackfathom Deeps"
+    },
+    {
+      "name": "Wolf Master Nandos",
+      "id": 3927,
+      "level": "–",
+      "p": 33.3,
+      "n": 3,
+      "loc": "Shadowfang Keep"
+    },
+    {
+      "name": "Lashtail Raptor",
+      "id": 686,
+      "level": "35–36",
+      "p": 20,
+      "n": 5,
+      "loc": "Stranglethorn Vale"
+    },
+    {
+      "name": "Nightbane Shadow Weaver",
+      "id": 533,
+      "level": "27–28",
+      "p": 14.3,
+      "n": 7,
+      "loc": "Brightwood Grove, Duskwood"
+    }
+  ]
+}

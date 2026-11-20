@@ -1,0 +1,3 @@
+local _, addon = ...
+-- Populated by scripts/export_warcraft_forever.py when a snapshot has been retrieved.
+addon.warcraftForever = { names = {} }

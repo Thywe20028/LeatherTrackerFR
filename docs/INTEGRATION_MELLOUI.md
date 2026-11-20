@@ -1,67 +1,37 @@
-# Intégration des calques MelloUI — LeatherTracker FR
+# LeatherTracker FR et les calques de MelloUI 2.1.60
 
-Statut : **spécification**, aucune intégration de calque réalisée ni validée en jeu.
+## Référence vérifiée
 
-## Constat visuel (captures utilisateur, 2026-11-19)
+Le ZIP MelloUI fourni indique 2.1.60 pour le cœur et le module Carte. Les fichiers officiels de la branche main, téléchargés le 19 novembre 2026, correspondent au ZIP pour Map.lua, MapQuestLog.lua, MapAddonPins.lua et MelloUI_Map.toc, après normalisation des fins de ligne. La version effectivement chargée sur le poste du joueur reste à relever avec `/ltmapdebug`.
 
-La carte MelloUI affiche un panneau latéral « Calques de la carte » avec des catégories et des cases à cocher (quêtes, voyage, niveaux, personnes et autres). Une option « Repères des autres add-ons » est visible. La mini-carte propose également un panneau « Services » et une liste « Extensions ».
+| Besoin | Code vérifié |
+|---|---|
+| Groupes natifs | Map.lua, tables locales GROUPS et SWITCHES. Build transmet les groupes à QuestLog.Layers. |
+| Panneau et cases | MapQuestLog.lua, LayersPage. Le pager, les titres et les cases sont créés avec les widgets MelloUI. |
+| Persistance native | Map.lua, LayerOn et SetLayer lisent ou écrivent M.db.layers. |
+| HandyNotes | Map.lua ajoute les lignes de MapTownMarks.KINDS au groupe 5. MapQuestLog.Missing les grise si le plugin ou son intégration est indisponible. |
+| Actualisation | Log.Layers reçoit la définition. LayersPage crée les lignes une seule fois, Log.LayersChanged rafraîchit les interrupteurs déjà créés. |
+| Ouverture | Map.lua, OpenLayers sur le module retourné par MelloUI:GetModule("Map"). |
+| Marqueurs | MapAddonPins.lua expose AddPin, ClearPin, ClearPins, OnViewChanged, IsShown et Show sur MelloUI.Map. Ces méthodes n’étendent pas le panneau. |
 
-## Objectif
+[Source officielle MelloUI](https://github.com/MelloCro/MelloUI/tree/main/MelloUI_Map)
 
-Ajouter une catégorie « RÉCOLTE ET ARTISANAT » au panneau de calques, avec :
-- Matériaux de la recette suivie ;
-- Créatures à dépecer ;
-- Marchands de composants ;
-- Parcours de récolte (phase ultérieure).
+## Intégration proposée
 
-Chaque calque doit pouvoir être activé/désactivé séparément, sans modifier les réglages des autres extensions. L'utilisateur doit pouvoir masquer tous les repères LeatherTracker.
+MelloUI 2.1.60 d’origine n’expose aucune API d’ajout de groupe. Le [patch de revue](PROPOSITION_MELLOUI_2.1.60.patch), accompagné de la [licence MIT de MelloUI](MELLOUI_LICENSE.txt), est une proposition côté MelloUI, à examiner par son mainteneur. Il passe par les widgets natifs et insère les quatre interrupteurs entre Quêtes et Voyage, en conservant les fonctions natives de lecture et d’écriture pour les autres groupes. Il ajoute un retour d’état du groupe et un comptage des marqueurs rendus. L’archive ordinaire de LeatherTracker installe uniquement LeatherTracker. Les anciens ponts reconnus continuent à recevoir les quatre lignes, avec des diagnostics de rendu limités.
 
-## Comportement attendu
+Les quatre cases sont enregistrées dans LeatherTrackerFRDB. Elles filtrent les repères sélectionnés en mode manuel ou calculés en mode automatique. Avec la proposition, un enregistrement après la création du panneau sans la section est refusé pour la session. L’enregistrement normal a lieu au chargement de LeatherTracker.
 
-1. Depuis la fenêtre de métier, l'utilisateur choisit une recette et ouvre le panneau LeatherTracker sans commande chat.
-2. L'addon détermine les composants manquants **uniquement lorsque l'inventaire est confirmé**.
-3. Les repères sont filtrés par matériau, source et zone. Ne jamais inventer de position, niveau, taux de butin ou compétence requise.
-4. Une infobulle précise la source, le composant et la provenance des données.
-5. Si les données de localisation manquent, indiquer « Emplacement non vérifié » plutôt qu'afficher un repère fictif.
-6. Le calque doit rester indépendant des repères des autres addons.
+## Diagnostic et validation
 
-## Vérifications techniques avant codage
+`/ltmapdebug` affiche les modules et versions, la présence de l’API, le résultat d’enregistrement, les préférences et les compteurs. Sur une installation officielle 2.1.60, l’API de catégorie est absente. Un pont qui reçoit les lignes ne prouve pas leur rendu. La proposition compte séparément les cases créées et les marqueurs rendus par MelloUI.
 
-- Confirmer dans le code de MelloUI la méthode officielle d'enregistrement d'un calque dans le panneau « Calques de la carte » ; la disponibilité de `MelloUI.Map:AddPin` **ne prouve pas** l'existence d'une API d'enregistrement de catégorie.
-- Confirmer la gestion des coordonnées, des identifiants de cartes, des marqueurs, des clics et de la suppression des repères.
-- Vérifier le comportement de l'option « Repères des autres add-ons » et la compatibilité HandyNotes.
-- Vérifier le chargement facultatif de MelloUI, la persistance des préférences et l'absence de conflits.
-- Tester l'affichage sur la carte du monde et la mini-carte, à plusieurs échelles.
+Tests réalisés en local : comparaison ZIP et dépôt officiel, application du patch à une copie de référence, compilation Lua, simulations du filtrage, du rechargement des préférences et des diagnostics.
 
-## Ordre de développement
+Validation dans le client WoW à effectuer sur une version MelloUI intégrant la proposition :
 
-1. Fiabiliser noms d'objets et comptage des sacs.
-2. Intégrer le panneau à la fenêtre de métier.
-3. Valider une première source de localisation avec données vérifiables.
-4. Afficher un repère test sur MelloUI.
-5. Intégrer les options de calque, uniquement après confirmation de l'API.
-6. Ajouter filtres, infobulles et éventuellement parcours.
-
-Les captures ne permettent pas de confirmer une API MelloUI pour ajouter une catégorie de calque. Cette fonctionnalité reste donc à investiguer.
-
-## Décision produit — deux modes de ressources (2026-11-19)
-
-### Mode « Ressources de base »
-- Disponible sans recette suivie, lorsque le calque LeatherTracker est activé.
-- Affichage automatique **filtré** des sources vérifiées de matériaux courants du Travail du cuir : cuirs (léger, moyen, lourd, épais, robuste), peaux et autres ressources confirmées dans la base de données du client.
-- Filtres par famille de matériau, zone et éventuellement niveau de créature / compétence de dépeçage lorsque vérifiés.
-- Ne pas confondre « automatique » et « tout afficher partout » : limiter le nombre de marqueurs, regrouper ceux qui se chevauchent et respecter les préférences utilisateur.
-- Les noms exacts, les objets existants et leurs sources doivent être validés dans les données WoW Forever avant publication.
-
-### Mode « Suivre cette recette »
-- Action explicite depuis la fenêtre du métier ; aucune recette n'est suivie automatiquement.
-- Afficher en priorité les sources vérifiées des composants de la recette suivie et, si demandé, les marchands correspondants.
-- Option « Matériaux manquants uniquement » ; si le nombre possédé est inconnu, afficher un état inconnu plutôt que zéro.
-- Masquer temporairement les ressources de base sans rapport avec la recette pour réduire l'encombrement, avec possibilité de les réactiver.
-- Exemple de test : recette 7955 « Ceinture en écailles de déviant », composants observés #6471 ×10, #6470 ×10, #2321 ×2 ; noms et inventaire encore à fiabiliser.
-
-### Comportements communs
-- Deux options indépendantes dans les calques : « Ressources de base » et « Recette suivie ».
-- Activer/désactiver sans perturber les repères d'autres addons.
-- Afficher uniquement des emplacements et marchands documentés ; aucune position ou disponibilité inventée.
-- Ces deux modes sont **spécifiés, pas encore implémentés**.
+1. Relever les versions avec `/ltmapdebug`, ouvrir Carte → Calques et vérifier le groupe entre Quêtes et Voyage.
+2. En mode automatique, cocher puis décocher chaque interrupteur. Vérifier les repères de marchand, de créature et les autres sources disponibles, puis la case générale.
+3. Fermer et rouvrir la carte. Faire `/reload`, revenir dans Calques et vérifier les quatre états.
+4. Basculer des calques natifs, dont Quêtes, Voyage et HandyNotes si ce dernier est présent.
+5. Relancer `/ltmapdebug` avec Calques ouvert et comparer la sortie à la carte affichée.

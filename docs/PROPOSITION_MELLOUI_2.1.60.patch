@@ -1,0 +1,159 @@
+--- a/MelloUI_Map/MapQuestLog.lua
++++ b/MelloUI_Map/MapQuestLog.lua
+@@ -71,6 +71,9 @@
+ local pcall, type, ipairs, wipe = pcall, type, ipairs, wipe
+ 
+ local Log = {}
++local leatherProvider, nativeLayers
++local leatherRows = {}
++local leatherHeading
+ ns.QuestLog = Log
+ 
+ local T = {
+@@ -1493,6 +1496,7 @@
+ 	for g, name in ipairs(spec.groups) do
+ 		local h = HeadLook(CreateFrame("Frame", nil, pane))
+ 		h.mapLabelKey = name
++		if name == "LeatherTracker FR" then leatherHeading = h end
+ 		h.label:SetText(W.Tr(name):upper())   -- (capitals, as before: the heading's look)
+ 		S.layerHeads[#S.layerHeads + 1] = h
+ 		h:SetPoint("TOPLEFT", pane, "TOPLEFT", 0, -y)
+@@ -1516,6 +1520,7 @@
+ 				r.icon:SetPoint("LEFT", r, "LEFT", 4, 0)
+ 				-- (2.1.53: a town kind's picture as its marks wear it, MapTownMarks' Icon)
+ 				Icons.Set(r.icon, s.town and ns.TownMarks.Icon(s.town) or s.icon, T.LAYER_ICON)
++				if s.leather then leatherRows[#leatherRows + 1] = r end
+ 				r.mapLabelKey = s.label
+ 				r.label = W.Text(r, "GameFontHighlight", W.Tr(s.label), "text")
+ 				r.label:SetPoint("LEFT", r, "LEFT", 4 + T.LAYER_ICON + 10, 0)
+@@ -1565,12 +1570,61 @@
+ 	SyncLayersBar()
+ end
+ 
++local function LayersWithLeatherTracker(spec)
++	if not leatherProvider then return spec end
++	local groups, switches = {}, {}
++	for i, group in ipairs(spec.groups) do
++		groups[#groups + 1] = group
++		if i == 1 then groups[#groups + 1] = "LeatherTracker FR" end
++	end
++	for _, row in ipairs(spec.switches) do
++		local copy = {}
++		for key, value in pairs(row) do copy[key] = value end
++		if copy.group > 1 then copy.group = copy.group + 1 end
++		switches[#switches + 1] = copy
++	end
++	local icons = {[0] = "track_todo", merchants = "svc_inn", creatures = "quest_mark", other = "pin_dungeon"}
++	for _, row in ipairs(leatherProvider.rows) do
++		switches[#switches + 1] = { key = "leathertracker:" .. row.id, label = row.name,
++			icon = icons[row.id], group = 2, leather = row.id }
++	end
++	local function find(key)
++		return leatherProvider.byKey[key]
++	end
++	return { groups = groups, switches = switches,
++		on = function(key)
++			local row = find(key)
++			if row then return row.checked end
++			return spec.on(key)
++		end,
++		set = function(key, on)
++			local row = find(key)
++			if row then return leatherProvider.set(row.id, on) end
++			return spec.set(key, on)
++		end }
++end
++
+ function Log.Layers(spec)
+-	S.layers = spec
++	nativeLayers = spec
++	S.layers = LayersWithLeatherTracker(spec)
+ 	if S.built and S.mode == "layers" then
+-		LayersPage()   -- (the column left on the layers: its page now)
++		LayersPage()
+ 		Log.LayersChanged()
+ 	end
++end
++
++function MelloUI.Map:LeatherTrackerSetLayers(rows, setter)
++	if S.layerRows and not leatherHeading then return false end
++	local byKey = {}
++	for _, row in ipairs(rows) do byKey["leathertracker:" .. row.id] = row end
++	leatherProvider = {rows = rows, byKey = byKey, set = setter}
++	if nativeLayers then Log.Layers(nativeLayers) end
++	return true
++end
++
++function MelloUI.Map:LeatherTrackerLayerStatus()
++	return { created = leatherHeading ~= nil, rows = #leatherRows,
++		visible = leatherHeading ~= nil and leatherHeading:IsVisible() }
+ end
+ 
+ function Log.LayersChanged()
+--- a/MelloUI_Map/MapAddonPins.lua
++++ b/MelloUI_Map/MapAddonPins.lua
+@@ -1307,12 +1307,20 @@
+ local API = {}
+ MelloUI.Map = API
+ 
++local function CanPlace(uiMapID, x, y, collection)
++	if S.canvas.byID[uiMapID] then return true end
++	if not collection then return false end
++	local wx, wy = S.canvas:ToWorld(uiMapID, x, y)
++	return wx ~= nil and wy ~= nil
++end
++
+ function API:AddPin(owner, key, uiMapID, x, y, spec)
+ 	uiMapID, x, y = Finite(uiMapID), Finite(x), Finite(y)
+ 	if owner == nil or key == nil or not (uiMapID and x and y) or type(spec) ~= "table" then
+ 		return false
+ 	end
+-	if S.apiLaid and not S.canvas.byID[uiMapID] then
++	local collection = owner == "LeatherTrackerFR" and spec.leatherTrackerLayer
++	if S.apiLaid and not CanPlace(uiMapID, x, y, collection) then
+ 		return false
+ 	end
+ 	local list = S.api[owner]
+@@ -1321,7 +1329,7 @@
+ 		S.api[owner] = list
+ 	end
+ 	local old = list[key]
+-	local layer = LAYER[SHOW[spec.show] or "zone"]
++	local layer = collection and "leathertracker_collection" or LAYER[SHOW[spec.show] or "zone"]
+ 	if old and S.pins and old.layer ~= layer then
+ 		S.pins:Remove(old.layer, old.pinKey)
+ 	end
+@@ -1373,6 +1381,15 @@
+ 	S.views[owner] = type(fn) == "function" and fn or nil
+ end
+ 
++function API:LeatherTrackerVisiblePins()
++	local layer = S.pins and S.pins.layers.leathertracker_collection
++	local count = 0
++	for _, pin in pairs(layer and layer.pins or {}) do
++		if pin.shown and pin.tex and pin.tex:IsVisible() then count = count + 1 end
++	end
++	return count
++end
++
+ function API:IsShown()
+ 	return S.shown
+ end
+@@ -1391,6 +1408,8 @@
+ 
+ function AddonPins.Init(canvas, pins)
+ 	S.canvas, S.pins = canvas, pins
++	local collection = pins:Layer("leathertracker_collection", T.ORDER.zone)
++	S.ours[collection.frame] = true
+ 	local zone = pins:Layer(LAYER.zone, T.ORDER.zone, { minZ = T.ZONE_FROM })
+ 	local cont = pins:Layer(LAYER.continent, T.ORDER.continent, { minZ = T.CONTINENT_FROM })
+ 	local world = pins:Layer(LAYER.world, T.ORDER.world)
+@@ -1406,7 +1425,7 @@
+ 	S.apiLaid = true
+ 	for owner, list in pairs(S.api) do
+ 		for key, e in pairs(list) do
+-			if S.canvas.byID[e.mapID] then
++			if CanPlace(e.mapID, e.x, e.y, e.layer == "leathertracker_collection") then
+ 				ApiLay(e)
+ 			else
+ 				API:ClearPin(owner, key)
