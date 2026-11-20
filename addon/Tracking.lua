@@ -1,3 +1,4 @@
+local addonName = ...
 local addon = CreateFrame("Frame")
 local tab
 local elapsed = 0
@@ -71,7 +72,9 @@ SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local frame = _G.ProfessionsFrame
  local collection = _G.LeatherTrackerCollection
- print("LeatherTracker 0.7.33 | Métiers="..tostring(frame ~= nil)..
+ local getMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+ local version = getMetadata and getMetadata(addonName or "LeatherTrackerFR", "Version")
+ print("LeatherTracker "..(version or "version inconnue").." | Métiers="..tostring(frame ~= nil)..
   " | Ma collecte="..tostring(collection ~= nil and collection:IsVisible())..
   " | ongletVisible="..tostring(tab ~= nil and tab:IsVisible()))
 end

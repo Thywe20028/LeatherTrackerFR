@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.39"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.40"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}

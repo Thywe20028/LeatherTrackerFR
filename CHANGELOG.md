@@ -1,3 +1,7 @@
+## 0.7.40
+
+- Affiche dans /ltstatus la version déclarée par l’addon chargé.
+
 ## 0.7.39
 
 - Présente les recettes en lignes compactes avec icône et statut d’apprentissage.
