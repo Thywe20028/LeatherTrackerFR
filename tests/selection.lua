@@ -160,7 +160,17 @@ ForeverDB_Saved = {sources = {
  }},
 }}
 assert(loadfile("addon/ComponentData.lua"))("LeatherTrackerFR", namespace)
-assert(loadfile("addon/Collection.lua"))("LeatherTrackerFR", namespace)
+local collectionSource = assert(io.open("addon/Collection.lua"))
+local chunk = assert((loadstring or load)(collectionSource:read("*a") .. [[
+
+local count = 0
+for index = 1, debug.getinfo(refresh, "u").nups do
+ if debug.getupvalue(refresh, index) ~= "_ENV" then count = count + 1 end
+end
+assert(count <= 60, "Ma collecte doit respecter la limite de 60 upvalues de Lua 5.1")
+]], "@addon/Collection.lua"))
+collectionSource:close()
+chunk("LeatherTrackerFR", namespace)
 local collectionEvents = frames[newEventIndex].scripts
 local trackingIndex = #frames + 1
 dofile("addon/Tracking.lua")

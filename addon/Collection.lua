@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.42"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.43"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -1305,6 +1305,45 @@ function addon.SkinningSourcesChanged(drops)
  end
 end
 
+local function refreshOptions()
+ local settings = collection.map
+ local api = mapAPI()
+ for _, key in ipairs({"compact", "locked", "collapsed", "notifyComplete", "hideCompleted"}) do
+  mapControls[key]:SetChecked(not not collection[key])
+ end
+ mapControls.learning:SetChecked(not LeatherTrackerFRDB.skinningLearningDisabled)
+ mapControls.learning:SetEnabled(type(addon.GetSkinningDiagnostic) == "function")
+ lastDiagnosticText = learningText()
+ mapControls.learningState:SetText(lastDiagnosticText)
+ local advancedAvailable = api ~= nil or (TomTom and type(TomTom.AddWaypoint) == "function")
+  or (C_Map and type(C_Map.SetUserWaypoint) == "function")
+ local expanded = advancedAvailable and collection.map.advancedOpen
+ mapControls.advanced:SetShown(not not expanded)
+ mapControls.advancedButton:SetShown(not not advancedAvailable)
+ mapControls.advancedButton:SetText(expanded and "Masquer les réglages avancés" or "Réglages avancés de la carte")
+ local lowerY = expanded and -531 or advancedAvailable and -347 or -314
+ mapControls.lower:SetPoint("TOPLEFT", 0, lowerY)
+ mapControls.lower:SetPoint("TOPRIGHT", 0, lowerY)
+ mapControls.settingsBody:SetHeight(-lowerY + 184)
+ mapControls.openLayers:SetShown(not not (api and type(api.LeatherTrackerSetLayers) == "function" and mapLayersModule()))
+ local descriptions = {
+  manual = "Affiche un repère lorsque tu choisis une source.",
+  automatic = api and "Affiche les sources documentées de tes suivis dans MelloUI." or "Affichage automatique disponible avec le module Carte de MelloUI.",
+  off = "Masque les repères LeatherTracker.",
+ }
+ mapControls.modeDescription:SetText(descriptions[settings.mode])
+ mapControls.mapTracked:SetChecked(not settings.layersHidden)
+ for _, layer in ipairs(layerDefinitions) do
+  mapControls[layer.id]:SetChecked(not settings.hiddenKinds[layer.id])
+ end
+ for mode, control in pairs(mapControls.modes) do
+  control:SetEnabled(mode ~= settings.mode and (mode ~= "automatic" or api ~= nil))
+ end
+ for _, key in ipairs({"multiple", "hideDone", "tips"}) do
+  mapControls[key]:SetChecked(not not settings[key])
+ end
+end
+
 refresh = function()
  if not collection then return end
  pendingItemRefresh = nil
@@ -1434,46 +1473,7 @@ refresh = function()
   local compactLabel = collection.compact and "Masquer le suivi" or "Afficher le suivi"
   if panel:GetWidth() < 500 then compactLabel = collection.compact and "Masquer" or "Afficher" end
   panel.CompactControl:SetText(compactLabel)
-  if optionsOpen then
-   for _, key in ipairs({"compact", "locked", "collapsed", "notifyComplete", "hideCompleted"}) do
-    mapControls[key]:SetChecked(not not collection[key])
-   end
-   mapControls.learning:SetChecked(not LeatherTrackerFRDB.skinningLearningDisabled)
-   mapControls.learning:SetEnabled(type(addon.GetSkinningDiagnostic) == "function")
-   lastDiagnosticText = learningText()
-   mapControls.learningState:SetText(lastDiagnosticText)
-  end
-  local settings = collection.map
-  local api = mapAPI()
-  if optionsOpen then
-   local advancedAvailable = api ~= nil or (TomTom and type(TomTom.AddWaypoint) == "function")
-    or (C_Map and type(C_Map.SetUserWaypoint) == "function")
-   local expanded = advancedAvailable and collection.map.advancedOpen
-   mapControls.advanced:SetShown(not not expanded)
-   mapControls.advancedButton:SetShown(not not advancedAvailable)
-   mapControls.advancedButton:SetText(expanded and "Masquer les réglages avancés" or "Réglages avancés de la carte")
-   local lowerY = expanded and -531 or advancedAvailable and -347 or -314
-   mapControls.lower:SetPoint("TOPLEFT", 0, lowerY)
-   mapControls.lower:SetPoint("TOPRIGHT", 0, lowerY)
-   mapControls.settingsBody:SetHeight(-lowerY + 184)
-   mapControls.openLayers:SetShown(not not (api and type(api.LeatherTrackerSetLayers) == "function" and mapLayersModule()))
-   local descriptions = {
-    manual = "Affiche un repère lorsque tu choisis une source.",
-    automatic = api and "Affiche les sources documentées de tes suivis dans MelloUI." or "Affichage automatique disponible avec le module Carte de MelloUI.",
-    off = "Masque les repères LeatherTracker.",
-   }
-   mapControls.modeDescription:SetText(descriptions[settings.mode])
-   mapControls.mapTracked:SetChecked(not settings.layersHidden)
-   for _, layer in ipairs(layerDefinitions) do
-    mapControls[layer.id]:SetChecked(not settings.hiddenKinds[layer.id])
-   end
-   for mode, control in pairs(mapControls.modes) do
-    control:SetEnabled(mode ~= settings.mode and (mode ~= "automatic" or api ~= nil))
-   end
-   for _, key in ipairs({"multiple", "hideDone", "tips"}) do
-    mapControls[key]:SetChecked(not not settings[key])
-   end
-  end
+  if optionsOpen then refreshOptions() end
   scroll:ClearAllPoints()
   if showCollection then
    scroll:SetPoint("TOPLEFT", panel.Catalog, "TOPRIGHT", 17, -49)

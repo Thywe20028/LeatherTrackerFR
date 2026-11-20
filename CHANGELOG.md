@@ -1,3 +1,7 @@
+## 0.7.43
+
+- Scinde le rafraîchissement de Ma collecte pour respecter la limite de variables externes par fonction du client WoW.
+
 ## 0.7.42
 
 - Enregistre /ltpanel et /ltfr au chargement du fichier principal. La commande indique les problèmes de chargement ou d’initialisation de Ma collecte dans le chat.
