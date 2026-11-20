@@ -1,3 +1,7 @@
+## 0.7.42
+
+- Enregistre /ltpanel et /ltfr au chargement du fichier principal. La commande indique les problèmes de chargement ou d’initialisation de Ma collecte dans le chat.
+
 ## 0.7.41
 
 - Permet d’ouvrir Ma collecte pendant une transition de la fenêtre Métiers et signale les erreurs d’ouverture dans le chat.

@@ -62,12 +62,6 @@ local function register()
  frame:HookScript("OnHide", LeatherTrackerCloseCollection)
 end
 
-SLASH_LEATHERTRACKERPANEL1 = "/ltpanel"
-SlashCmdList.LEATHERTRACKERPANEL = function()
- register()
- LeatherTrackerToggleCollection()
-end
-
 SLASH_LEATHERTRACKERSTATUS1 = "/ltstatus"
 SlashCmdList.LEATHERTRACKERSTATUS = function()
  local frame = _G.ProfessionsFrame

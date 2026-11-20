@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.41"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.42"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -1886,7 +1886,10 @@ refresh = function()
 end
 
 function LeatherTrackerToggleCollection()
- if not collection then return end
+ if not collection then
+  print("LeatherTracker : Ma collecte n’est pas initialisée. Fais /reload puis réessaie.")
+  return
+ end
  local frame = ProfessionsFrame
  if not frame or not frame:IsVisible() then
   print("LeatherTracker : ouvre la fenêtre Métiers.")

@@ -163,10 +163,20 @@ local function debugInfo()
   "Recettes filtrees : "..(type(filtered) == "table" and tostring(#filtered) or "inconnu")}
  return table.concat(lines, "\n")
 end
+local function openCollection()
+ if type(LeatherTrackerToggleCollection) ~= "function" then
+  print("LeatherTracker : Collection.lua n’a pas chargé. Vérifie l’installation et active les erreurs Lua.")
+  return
+ end
+ LeatherTrackerToggleCollection()
+end
+
+SLASH_LEATHERTRACKERPANEL1 = "/ltpanel"
+SlashCmdList.LEATHERTRACKERPANEL = openCollection
 SLASH_LEATHERTRACKERFR1 = "/ltfr"
 SlashCmdList.LEATHERTRACKERFR = function(msg)
  local action, arg = (msg or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
- if action == "" then SlashCmdList.LEATHERTRACKERPANEL()
+ if action == "" then openCollection()
  elseif action == "api" then show(status())
  elseif action == "debug" then show(debugInfo())
  elseif action == "scan" then show(scan())
