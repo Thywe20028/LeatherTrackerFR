@@ -1,3 +1,7 @@
+## 0.7.41
+
+- Permet d’ouvrir Ma collecte pendant une transition de la fenêtre Métiers et signale les erreurs d’ouverture dans le chat.
+
 ## 0.7.40
 
 - Affiche dans /ltstatus la version déclarée par l’addon chargé.

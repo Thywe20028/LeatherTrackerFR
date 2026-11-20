@@ -14,7 +14,7 @@ local function register()
  tab.tooltipText = "LeatherTracker FR"
  tab:EnableMouse(true)
  tab:SetCustomOnMouseUpHandler(function(_, mouseButton, upInside)
-  if mouseButton == "LeftButton" and upInside then
+  if mouseButton == "LeftButton" and upInside ~= false then
    LeatherTrackerToggleCollection()
   end
  end)

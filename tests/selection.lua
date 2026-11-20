@@ -199,7 +199,10 @@ reagent.right = 180
 collectionEvents.OnUpdate(nil, 0.2)
 plus.scripts.OnClick(plus)
 assert(LeatherTrackerFRDB.collection.goals[6471] == 10)
-tab.mouseUp(tab, "LeftButton", true)
+local getRecipeInfo = crafting.SchematicForm.GetRecipeInfo
+crafting.SchematicForm.GetRecipeInfo = function() error("Métier en transition") end
+tab.mouseUp(tab, "LeftButton")
+crafting.SchematicForm.GetRecipeInfo = getRecipeInfo
 assert(not openedProfession and not LeatherTrackerFRProfessionPage)
 local collectionPanel = LeatherTrackerCollection
 assert(collectionPanel:IsVisible() and collectionPanel:GetParent() == profession)

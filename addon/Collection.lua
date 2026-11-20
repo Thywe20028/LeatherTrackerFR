@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.40"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.41"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -716,6 +716,17 @@ function LeatherTrackerRefreshCollectionFrame()
  if LeatherTrackerFRProfessionTab then LeatherTrackerFRProfessionTab:SetChecked(true) end
 end
 
+local function leatherworkingRecipe(form)
+ local api = C_TradeSkillUI
+ if not form or type(form.GetRecipeInfo) ~= "function"
+  or not api or type(api.GetProfessionInfoByRecipeID) ~= "function" then return end
+ local ok, recipe = pcall(form.GetRecipeInfo, form)
+ if not ok or type(recipe) ~= "table" or type(recipe.recipeID) ~= "number" then return end
+ local found, profession = pcall(api.GetProfessionInfoByRecipeID, recipe.recipeID)
+ if found and type(profession) == "table"
+  and (profession.parentProfessionID or profession.professionID) == 165 then return api end
+end
+
 local function createPanel(frame)
  panel = CreateFrame("Frame", "LeatherTrackerCollection", frame)
  panel:Hide()
@@ -741,11 +752,6 @@ local function createPanel(frame)
   if SetPortraitToTexture then SetPortraitToTexture(overlay, logo) else overlay:SetTexture(logo) end
  end
  panel:SetScript("OnShow", function()
-  local form = frame.CraftingPage and frame.CraftingPage.SchematicForm
-  local recipe = form and form.GetRecipeInfo and form:GetRecipeInfo()
-  local api = C_TradeSkillUI
-  local profession = recipe and api and api.GetProfessionInfoByRecipeID and api.GetProfessionInfoByRecipeID(recipe.recipeID)
-  if profession and (profession.parentProfessionID or profession.professionID) == 165 then scanLeatherworking(api) end
   if nativeTitle and nativeHeader[nativeTitle] == nil then nativeHeader[nativeTitle] = nativeTitle:GetAlpha() end
   if nativePortrait and nativeHeader[nativePortrait] == nil then nativeHeader[nativePortrait] = nativePortrait:GetAlpha() end
   LeatherTrackerRefreshCollectionFrame()
@@ -1886,8 +1892,20 @@ function LeatherTrackerToggleCollection()
   print("LeatherTracker : ouvre la fenêtre Métiers.")
   return
  end
- if not panel then createPanel(frame) end
- if panel:IsShown() then LeatherTrackerCloseCollection() else showItem(nil) end
+ local ok, failure = pcall(function()
+  if not panel then createPanel(frame) end
+  if panel:IsShown() then
+   LeatherTrackerCloseCollection()
+  else
+   local api = leatherworkingRecipe(frame.CraftingPage and frame.CraftingPage.SchematicForm)
+   if api then scanLeatherworking(api) end
+   showItem(nil)
+  end
+ end)
+ if not ok then
+  LeatherTrackerCloseCollection()
+  print("LeatherTracker : erreur à l’ouverture — "..tostring(failure))
+ end
 end
 
 local REAGENT_BUTTON_WIDTH = 20
@@ -1950,15 +1968,17 @@ scanLeatherworking = function(api)
  local read = false
  for _, recipeID in ipairs(ids) do
   local success, profession = pcall(api.GetProfessionInfoByRecipeID, recipeID)
-  if success and profession and (profession.parentProfessionID or profession.professionID) == 165 then
+  if success and type(profession) == "table" and (profession.parentProfessionID or profession.professionID) == 165 then
    local fetched, schematic = pcall(api.GetRecipeSchematic, recipeID, false)
-   if fetched and schematic then
+   if fetched and type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
     read = true
     local infoOK, info
     if api.GetRecipeInfo then infoOK, info = pcall(api.GetRecipeInfo, recipeID) end
-    local record = {id = recipeID, name = (infoOK and info and info.name) or schematic.name or ("Recette #"..recipeID), slots = {}}
+    if not infoOK or type(info) ~= "table" then info = nil end
+    local name = info and info.name or schematic.name
+    local record = {id = recipeID, name = type(name) == "string" and name or ("Recette #"..recipeID), slots = {}}
     record.output = itemID(schematic.outputItemID)
-    if infoOK and info then
+    if info then
      record.icon = info.icon
      if type(info.learned) == "boolean" then record.learned = info.learned end
     end
@@ -2007,15 +2027,15 @@ local function syncReagents()
   for _, control in pairs(reagentButtons) do control:Hide() end
   return
  end
- local recipe = form:GetRecipeInfo()
- local api = C_TradeSkillUI
- local profession = recipe and api and api.GetProfessionInfoByRecipeID and api.GetProfessionInfoByRecipeID(recipe.recipeID)
- if not profession or (profession.parentProfessionID or profession.professionID) ~= 165 then
+ local api = leatherworkingRecipe(form)
+ local slotsOK, slots
+ if api then slotsOK, slots = pcall(form.GetSlots, form) end
+ if not slotsOK or type(slots) ~= "table" then
   for _, control in pairs(reagentButtons) do control:Hide() end
   return
  end
  scanLeatherworking(api)
- for _, slot in ipairs(form:GetSlots()) do
+ for _, slot in ipairs(slots) do
   local schematic = slot.GetReagentSlotSchematic and slot:GetReagentSlotSchematic()
   local candidates = schematic and schematic.reagents
   indexRecipeOptions(candidates)
