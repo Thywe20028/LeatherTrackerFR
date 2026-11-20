@@ -217,6 +217,11 @@ assert(not openedProfession and not LeatherTrackerFRProfessionPage)
 local collectionPanel = LeatherTrackerCollection
 assert(collectionPanel:IsVisible() and collectionPanel:GetParent() == profession)
 assert(crafting:GetAlpha() == 0 and crafting:IsShown(), "Fabrication est masquée sans fermeture")
+local exported = namespace.ExportLeatherworkingRecipes()
+assert(exported:find("2 recettes", 1, true))
+local export = LeatherTrackerFRDB.recipeExport
+assert(export.professionID == 165 and export.recipes[1].learned and export.recipes[2].learned == false)
+assert(export.recipes[1].slots[1].quantity == 2 and export.recipes[1].slots[1].items[1] == 6471)
 local status
 for _, widget in ipairs(frames) do
  if widget.status and type(widget.status) == "table" and widget.status.text:find("2 / 10 en sac", 1, true) then

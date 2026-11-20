@@ -1,3 +1,7 @@
+## 0.7.45
+
+- Ajoute /ltfr export pour enregistrer les recettes du Travail du cuir, leurs ingrédients et leurs quantités dans les SavedVariables.
+
 ## 0.7.44
 
 - Affiche Utilisé dans les recettes même sans schéma chargé. Ajoute des recettes documentées de WoW Forever en complément des données du client.

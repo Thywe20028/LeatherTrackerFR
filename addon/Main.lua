@@ -1,6 +1,6 @@
 -- LeatherTracker FR 0.1.1 - diagnostic reader for WoW Forever
 -- Read-only: never changes Blizzard recipe selection.
-local addonName = ...
+local addonName, addon = ...
 local api = C_TradeSkillUI
 local frame = CreateFrame("Frame", "LeatherTrackerFRWindow", UIParent)
 frame:SetSize(520, 440)
@@ -177,6 +177,9 @@ SLASH_LEATHERTRACKERFR1 = "/ltfr"
 SlashCmdList.LEATHERTRACKERFR = function(msg)
  local action, arg = (msg or ""):lower():match("^%s*(%S*)%s*(.-)%s*$")
  if action == "" then openCollection()
+ elseif action == "export" then
+  print("LeatherTracker : "..(addon and addon.ExportLeatherworkingRecipes and addon.ExportLeatherworkingRecipes()
+   or "Export indisponible. Vérifie que Collection.lua est chargé."))
  elseif action == "api" then show(status())
  elseif action == "debug" then show(debugInfo())
  elseif action == "scan" then show(scan())
@@ -185,7 +188,7 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
   show(id and readRecipe(id, "identifiant manuel") or "Syntaxe : /ltfr id 12345")
  elseif action == "refresh" then
   show(lastRecipeID and readRecipe(lastRecipeID, "derniere recette") or "Aucune recette precedente.")
- else show("Commandes : /ltfr scan | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
+ else show("Commandes : /ltfr scan | /ltfr export | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
 end
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")

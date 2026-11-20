@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.44"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.45"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -1341,7 +1341,7 @@ local function renderSourceRecipes(state, records)
   for _, slot in ipairs(selected.slots) do
    local choices = {}
    for _, id in ipairs(slot.items) do choices[#choices + 1] = itemInfo(id) end
-   lines[#lines + 1] = ("%d × %s%s"):format(slot.quantity, table.concat(choices, " ou "),
+   lines[#lines + 1] = ("%d × %s%s"):format(slot.quantity, #choices > 0 and table.concat(choices, " ou ") or "Composant non identifié",
     slot.optional and " (facultatif)" or "")
   end
   ingredients:ClearAllPoints()
@@ -2051,65 +2051,105 @@ local function indexRecipeOptions(options)
  end
 end
 
-local scannedLeatherworking = false
-scanLeatherworking = function(api)
- if scannedLeatherworking or not api.GetAllRecipeIDs or not api.GetRecipeSchematic then return end
+local function readLeatherworkingRecipes(api)
+ if type(api.GetAllRecipeIDs) ~= "function" or type(api.GetRecipeSchematic) ~= "function"
+  or type(api.GetProfessionInfoByRecipeID) ~= "function" then return {}, 0 end
  local ok, ids = pcall(api.GetAllRecipeIDs)
- if not ok or type(ids) ~= "table" or #ids == 0 then return end
- local read = false
+ if not ok or type(ids) ~= "table" then return {}, 0 end
+ local records, skipped, seen = {}, 0, {}
  for _, recipeID in ipairs(ids) do
-  local success, profession = pcall(api.GetProfessionInfoByRecipeID, recipeID)
-  if success and type(profession) == "table" and (profession.parentProfessionID or profession.professionID) == 165 then
+  local valid, profession = pcall(api.GetProfessionInfoByRecipeID, recipeID)
+  if not seen[recipeID] and valid and type(profession) == "table"
+   and (profession.parentProfessionID or profession.professionID) == 165 then
+   seen[recipeID] = true
    local fetched, schematic = pcall(api.GetRecipeSchematic, recipeID, false)
    if fetched and type(schematic) == "table" and type(schematic.reagentSlotSchematics) == "table" then
-    read = true
     local infoOK, info
-    if api.GetRecipeInfo then infoOK, info = pcall(api.GetRecipeInfo, recipeID) end
+    if type(api.GetRecipeInfo) == "function" then infoOK, info = pcall(api.GetRecipeInfo, recipeID) end
     if not infoOK or type(info) ~= "table" then info = nil end
     local name = info and info.name or schematic.name
-    local record = {id = recipeID, name = type(name) == "string" and name or ("Recette #"..recipeID), slots = {}}
-    record.output = itemID(schematic.outputItemID)
-    if record.output then
-     craftByItem[record.output] = craftByItem[record.output] or {}
-     table.insert(craftByItem[record.output], record)
-    end
-    if info then
-     record.icon = info.icon
-     if type(info.learned) == "boolean" then record.learned = info.learned end
-    end
-    local inputs = {}
-    for _, slot in ipairs(schematic.reagentSlotSchematics or {}) do
-     indexRecipeOptions(slot.reagents)
+    local record = {
+     id = recipeID, name = type(name) == "string" and name or ("Recette #"..recipeID),
+     output = itemID(schematic.outputItemID), icon = info and info.icon, slots = {},
+    }
+    if info and type(info.learned) == "boolean" then record.learned = info.learned end
+    for index, slot in ipairs(schematic.reagentSlotSchematics) do
      local count = tonumber(slot.quantityRequired)
      if count and count > 0 then
-      local options, seen = {}, {}
+      local options, seenItems = {}, {}
       for _, option in ipairs(slot.reagents or {}) do
        local id = itemID(option.itemID)
-       if id and not seen[id] then
-        inputs[id], seen[id] = true, true
+       if id and not seenItems[id] then
+        seenItems[id] = true
         options[#options + 1] = id
        end
       end
-      if #options > 0 then
-       record.slots[#record.slots + 1] = {items = options, quantity = count, optional = slot.required == false}
-      end
+      record.slots[#record.slots + 1] = {
+       index = index, items = options, quantity = count,
+       optional = slot.required == false, required = slot.required,
+      }
      end
     end
-    for id in pairs(inputs) do
-     recipesByItem[id] = recipesByItem[id] or {}
-     local listForItem = recipesByItem[id]
-     listForItem[#listForItem + 1] = record
-    end
+    records[#records + 1] = record
+   else
+    skipped = skipped + 1
    end
   end
  end
- if read then
-  scannedLeatherworking = true
-  table.sort(otherComponents.items)
-  for _, records in pairs(recipesByItem) do
-   table.sort(records, function(a, b) return a.name == b.name and a.id < b.id or a.name < b.name end)
+ table.sort(records, function(a, b) return a.name == b.name and a.id < b.id or a.name < b.name end)
+ return records, skipped
+end
+
+local scannedLeatherworking = false
+scanLeatherworking = function(api)
+ if scannedLeatherworking then return end
+ local records = readLeatherworkingRecipes(api)
+ if #records == 0 then return end
+ scannedLeatherworking = true
+ for _, record in ipairs(records) do
+  if record.output then
+   craftByItem[record.output] = craftByItem[record.output] or {}
+   table.insert(craftByItem[record.output], record)
+  end
+  local seen = {}
+  for _, slot in ipairs(record.slots) do
+   for _, id in ipairs(slot.items) do
+    if not seen[id] then
+     seen[id] = true
+     recipesByItem[id] = recipesByItem[id] or {}
+     table.insert(recipesByItem[id], record)
+    end
+    if not indexedComponents[id] then indexRecipeOptions({{itemID = id}}) end
+   end
   end
  end
+ table.sort(otherComponents.items)
+end
+
+function addon.ExportLeatherworkingRecipes()
+ if not collection then return "Ma collecte n’est pas initialisée." end
+ local frame = ProfessionsFrame
+ local page = frame and frame.CraftingPage
+ local api = frame and frame:IsVisible() and leatherworkingRecipe(page and page.SchematicForm)
+ if not api then return "Ouvre Travail du cuir, sélectionne une recette et relance /ltfr export." end
+ local records, skipped = readLeatherworkingRecipes(api)
+ if #records == 0 then return "Aucun schéma de Travail du cuir reçu. Le dernier export est conservé." end
+ local items, unresolved = {}, 0
+ for _, recipe in ipairs(records) do
+  recipe.icon = nil
+  for _, slot in ipairs(recipe.slots) do
+   if #slot.items == 0 then unresolved = unresolved + 1 end
+   for _, id in ipairs(slot.items) do
+    if not items[id] then items[id] = itemInfo(id) end
+   end
+  end
+ end
+ LeatherTrackerFRDB.recipeExport = {
+  format = 1, professionID = 165, recipes = records, itemNames = items,
+  unreadableRecipes = skipped, unresolvedSlots = unresolved,
+ }
+ return ("Export enregistré · %d recettes · %d schémas illisibles · %d emplacements sans ID d’objet. Fais /reload pour écrire la sauvegarde."):format(
+  #records, skipped, unresolved)
 end
 
 local function syncReagents()
