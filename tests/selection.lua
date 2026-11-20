@@ -93,10 +93,16 @@ local title = ProfessionsFrame:CreateFontString()
 title:SetText("Cuisine")
 function title:GetText() return self.text end
 ProfessionsFrame.TitleContainer = {TitleText = title}
-local openedProfession
+local openedProfession, openedRecipe
 C_TradeSkillUI = {
  OpenTradeSkill = function(id) openedProfession = id end,
  GetProfessionInfoByRecipeID = function() return {professionID = 165} end,
+ GetAllRecipeIDs = function() return {100, 101} end,
+ GetRecipeInfo = function(id) return {name = "Recette de test "..id, learned = id == 100} end,
+ GetRecipeSchematic = function(id)
+  return {reagentSlotSchematics = {{quantityRequired = id == 100 and 2 or 4, reagents = {{itemID = 6471}}}}}
+ end,
+ OpenRecipe = function(id) openedRecipe = id end,
 }
 local function button(text)
  for _, widget in ipairs(frames) do
@@ -221,6 +227,18 @@ local function sourceDetails()
  end
  error("Aucune fiche source visible")
 end
+assert(collectionPanel.SourcePrevious.Arrow.texture:find("PrevPage", 1, true))
+assert(collectionPanel.SourceNext.Arrow.texture:find("NextPage", 1, true))
+assert(collectionPanel.SourcePickerButton.text == "Mes suivis")
+assert(collectionPanel.SourceRecipes:IsVisible())
+collectionPanel.SourceRecipes.scripts.OnClick()
+button("Recette de test 100 (apprise)").scripts.OnClick()
+assert(collectionPanel.RecipeIngredients.text:find("2 ×", 1, true))
+button("Voir dans Fabrication").scripts.OnClick()
+assert(openedRecipe == 100 and not collectionPanel:IsVisible())
+tab.mouseUp(tab, "LeftButton", true)
+collectionPanel.SourcesTab.scripts.OnClick()
+collectionPanel.SourceRecipes.scripts.OnClick()
 local firstRow = {}
 for _, widget in ipairs(frames) do
  if type(rawget(widget, "Info")) == "table" and widget:IsVisible() then
@@ -382,6 +400,7 @@ assert(publicPins["cavernes-acces"] and publicPins["2321:1"])
 LeatherTrackerFRDB.collection.goals[6470] = nil
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 assert(#layerRows == 4)
+button("Réglages avancés de la carte").scripts.OnClick()
 button("Afficher les infobulles").scripts.OnClick()
 assert(not publicPins["2321:1"].tip)
 button("Désactivé").scripts.OnClick()
@@ -416,6 +435,7 @@ for _, sample in ipairs({
  {id = 2321, name = "Vendor-Tron 1000", expected = "60.2 / 38.2"},
  {id = 4340, name = "Mahu", expected = "approximative"},
  {id = 3356, name = "Sang-royal", expected = "Herboristerie 125"},
+ {id = 1210, name = "Ragefire Shaman", expected = "Butin", rate = "6,5 %", corpses = "31 observations"},
 }) do
  catalogue.Search:SetText(tostring(sample.id))
  catalogue.Search.scripts.OnTextChanged()
@@ -437,7 +457,7 @@ for _, sample in ipairs({
    details.Map.scripts.OnClick()
    assert(waypoint == previousWaypoint)
   end
-  assert(table.concat(details.details, " "):find("Position précise non vérifiée", 1, true))
+  if sample.id == 4234 then assert(table.concat(details.details, " "):find("Position précise non vérifiée", 1, true)) end
  end
  button("<").scripts.OnClick()
 end
@@ -445,7 +465,7 @@ local goals = {[2321] = 2, [4234] = 5, [6470] = 10}
 LeatherTrackerFRDB.collection.goals = goals
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 collectionPanel.SourcesTab.scripts.OnClick()
-assert(collectionPanel.SourceIndex:GetText() == "– / 3 composants")
+assert(not collectionPanel.SourceIndex:IsShown() and collectionPanel.SourceCounts.text:find("non suivi", 1, true))
 collectionPanel.SourceNext.scripts.OnClick()
 assert(collectionPanel.SourceIndex:GetText() == "1 / 3 composants")
 assert(not collectionPanel.SourcePrevious.enabled)

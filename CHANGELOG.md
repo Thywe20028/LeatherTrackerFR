@@ -1,3 +1,11 @@
+## 0.7.37
+
+- Remplace les flèches typographiques par des textures, simplifie le sélecteur Mes suivis et distingue les composants non suivis.
+- Ajoute les recettes retournées par le client, leurs ingrédients et un raccourci vers Fabrication pour les recettes apprises lorsque le client le propose.
+- Sépare les filtres Méthode et Localisation, réduit les portraits et déplace la copie du lien ForeverDB dans Détails.
+- Réserve la mention « corps dépecés » à la méthode Dépeçage. Les chiffres importés conservent leur provenance.
+- Clarifie les options avec des explications au survol et des réglages de carte repliables.
+
 ## 0.7.36
 
 - Revoit la grille des onglets et mémorise le composant, son filtre géographique, sa recherche, son défilement et le tri de Sources.

@@ -49,3 +49,11 @@ Tester à plusieurs résolutions et échelles UI, avec et sans MelloUI / Auction
 - Interrompre une recherche pour revenir à Ma collecte. Revenir à Sources et faire `/reload` pour vérifier la restauration des réglages et des filtres.
 - Déplacer et verrouiller le suivi compact. Dépecer manuellement et vérifier que le diagnostic se met à jour sans produire de message automatique.
 - Vérifier séparément la visibilité du calque dans le panneau natif MelloUI et la restauration de Fabrication.
+
+## Ajustements 0.7.37
+
+- **Mes suivis** liste les objectifs. **Tous les composants** ouvre le catalogue pour une consultation libre.
+- **Utilisé dans les recettes** utilise les identifiants d’objets des schémas retournés par le client. La section se replie et affiche cinq recettes par page. L’état appris provient du client, lorsqu’il le fournit. Vérifier sur Forever la couverture de la liste et le passage vers [Fabrication via OpenRecipe](https://warcraft.wiki.gg/wiki/API:C_TradeSkillUI.OpenRecipe).
+- Les filtres de méthode et de lieu se combinent. Les noms de zones peuvent occuper deux lignes.
+- **Détails** affiche les informations secondaires au survol. Un clic sélectionne l’adresse ForeverDB pour la copier avec le raccourci du système.
+- Dans **Options**, la commande des calques est visible lorsque le module de carte expose à la fois la catégorie et l’ouverture du panneau. Le diagnostic technique reste accessible via `/ltmapdebug`. La présence du calque reste à vérifier en jeu.
