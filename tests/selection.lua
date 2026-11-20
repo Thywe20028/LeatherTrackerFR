@@ -20,7 +20,7 @@ local function frame(parent)
  function widget:GetAlpha() return rawget(self, "alpha") or 1 end
  function widget:SetAlpha(value) self.alpha = value end
  function widget:GetFrameStrata() return "MEDIUM" end
- function widget:GetWidth() return 650 end
+ function widget:GetWidth() return rawget(self, "simulatedWidth") or 650 end
  function widget:HasFocus() return false end
  function widget:GetParent() return self.parent end
  function widget:GetFrameLevel() return 1 end
@@ -58,10 +58,19 @@ local function frame(parent)
  return widget
 end
 
-function CreateFrame(_, name, parent, template)
+function CreateFrame(kind, name, parent, template)
  assert(template ~= "BackdropTemplate", "Simulation : BackdropTemplate indisponible")
  local widget = frame(parent)
  frames[#frames + 1] = widget
+ if kind == "CheckButton" then
+  local createFontString = widget.CreateFontString
+  function widget:CreateFontString()
+   local caption = createFontString(self)
+   caption.checkControl = self
+   frames[#frames + 1] = caption
+   return caption
+  end
+ end
  if template == "BasicFrameTemplateWithInset" then widget.TitleText = widget:CreateFontString() end
  if template == "LargeSideTabButtonTemplate" then widget.Icon = widget:CreateTexture() end
  if name then _G[name] = widget end
@@ -91,7 +100,9 @@ C_TradeSkillUI = {
 }
 local function button(text)
  for _, widget in ipairs(frames) do
-  if widget.text == text and widget:IsVisible() then return widget end
+  if widget.text == text and widget:IsVisible() then
+   return rawget(widget, "checkControl") or widget
+  end
  end
  error("Bouton visible introuvable : "..text)
 end
@@ -218,6 +229,11 @@ for _, widget in ipairs(frames) do
 end
 assert(#firstRow >= 3 and firstRow[1].point[3] == firstRow[2].point[3]
  and firstRow[1].point[2] ~= firstRow[2].point[2] and firstRow[3].point[3] < firstRow[1].point[3])
+local results = firstRow[1]:GetParent()
+results.simulatedWidth = 370
+filterSources("")
+assert(firstRow[1].point[2] == firstRow[2].point[2] and firstRow[2].point[3] < firstRow[1].point[3])
+results.simulatedWidth = nil
 filterSources("Créature de test")
 local observed = sourceDetails().RateBox
 assert(observed:IsVisible() and observed.Value.text == "25,0 %"
@@ -234,7 +250,7 @@ button("<").scripts.OnClick()
 assert(status:IsVisible())
 button("Options").scripts.OnClick()
 assert(collectionPanel.MapSettings:IsVisible() and not status:IsVisible())
-button("Position : déverrouillée").scripts.OnClick()
+button("Verrouiller la position").scripts.OnClick()
 assert(LeatherTrackerFRDB.collection.locked)
 button("Retour à ma collecte").scripts.OnClick()
 assert(not collectionPanel.MapSettings:IsVisible() and status:IsVisible())
@@ -302,8 +318,8 @@ for _, widget in ipairs(frames) do
 end
 assert(foundZone).scripts.OnClick()
 filterSources("Vendor-Tron 1000")
-assert(sourceDetails().Info.text:find("60.2 / 38.2", 1, true))
-button("Voir sur MelloUI").scripts.OnClick()
+assert(table.concat(sourceDetails().details, " "):find("60.2 / 38.2", 1, true))
+button("Voir sur la carte").scripts.OnClick()
 assert(waypoint[1] == 1443 and waypoint[2] == 0.602 and waypoint[3] == 0.382)
 local publicPins, shownMap = {}, nil
 MelloUI = {Map = {
@@ -321,7 +337,7 @@ MelloUI = {Map = {
  Show = function(_, map) shownMap = map end,
 }}
 collectionEvents.OnEvent(nil, "ADDON_LOADED")
-button("Voir sur MelloUI").scripts.OnClick()
+button("Voir sur la carte").scripts.OnClick()
 assert(shownMap == 1443 and publicPins["2321:1"].tip and publicPins["2321:1"].size == 32)
 local focused
 MelloUI.Map.LeatherTrackerFocus = function(_, map, x, y)
@@ -329,10 +345,10 @@ MelloUI.Map.LeatherTrackerFocus = function(_, map, x, y)
  return true
 end
 shownMap = nil
-button("Voir sur MelloUI").scripts.OnClick()
+button("Voir sur la carte").scripts.OnClick()
 assert(focused[1] == 1443 and focused[2] == 0.602 and focused[3] == 0.382 and not shownMap)
 button("Options").scripts.OnClick()
-button("Mode : Manuel").scripts.OnClick()
+button("Automatique").scripts.OnClick()
 assert(publicPins["2321:1"] and publicPins["2321:2"] and publicPins["2321:3"])
 local entrance = assert(publicPins["cavernes-acces"])
 assert((entrance.tip()):find("6471", 1, true))
@@ -366,19 +382,19 @@ assert(publicPins["cavernes-acces"] and publicPins["2321:1"])
 LeatherTrackerFRDB.collection.goals[6470] = nil
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 assert(#layerRows == 4)
-button("Infobulles : oui").scripts.OnClick()
+button("Afficher les infobulles").scripts.OnClick()
 assert(not publicPins["2321:1"].tip)
-button("Mode : Automatique").scripts.OnClick()
+button("Désactivé").scripts.OnClick()
 assert(not next(publicPins))
-button("Masquer les objectifs atteints : non").scripts.OnClick()
-button("Mode : Désactivé").scripts.OnClick()
+button("Masquer les objectifs atteints sur la carte").scripts.OnClick()
+button("Manuel").scripts.OnClick()
 toggleLayer("merchants", false)
 assert(not publicPins["2321:1"])
 toggleLayer("merchants", true)
 assert(publicPins["2321:1"])
 collectionEvents.OnEvent(nil, "PLAYER_LOGIN")
 assert(not LeatherTrackerFRDB.collection.map.hiddenKinds.merchants and publicPins["2321:1"])
-button("Mode : Manuel").scripts.OnClick()
+button("Automatique").scripts.OnClick()
 C_Container.GetContainerItemInfo = function() return {itemID = 2321, stackCount = 1} end
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 assert(not publicPins["2321:1"] and not publicPins["2321:2"] and not publicPins["2321:3"])
@@ -412,11 +428,16 @@ for _, sample in ipairs({
  assert(collectionPanel.SourcePlaces:IsVisible() and not catalogue:IsVisible())
  filterSources(sample.name)
  local details = sourceDetails()
- assert(details.Info.text:find(sample.expected, 1, true), sample.name)
+ assert((details.Info.text..table.concat(details.details, " ")):find(sample.expected, 1, true), sample.name)
  if sample.rate then
   assert(details.RateBox.Value.text == sample.rate and details.RateBox.Sample.text == sample.corpses)
-  assert(not details.Map:IsShown())
-  assert(details.Info.text:find("Zone connue — position précise non vérifiée", 1, true))
+  if details.Map:IsShown() then
+   assert(details.Map:GetText() == "Voir la zone")
+   local previousWaypoint = waypoint
+   details.Map.scripts.OnClick()
+   assert(waypoint == previousWaypoint)
+  end
+  assert(table.concat(details.details, " "):find("Position précise non vérifiée", 1, true))
  end
  button("<").scripts.OnClick()
 end
@@ -431,7 +452,7 @@ assert(not collectionPanel.SourcePrevious.enabled)
 filterSources("Vendor-Tron 1000")
 collectionPanel.SourceNext.scripts.OnClick()
 assert(collectionPanel.SourceIndex:GetText() == "2 / 3 composants")
-assert(collectionPanel.SourceSearch:GetText() == "")
+assert(collectionPanel.SourceSearch:GetText() == "Crystal Spine Basilisk")
 assert(sourceDetails().Info.text ~= "")
 collectionPanel.SourcePickerButton.scripts.OnClick()
 assert(#collectionPanel.SourcePicker.Rows == 3)
@@ -444,10 +465,13 @@ collectionPanel.SourcesTab.scripts.OnClick()
 assert(collectionPanel.SourceIndex:GetText() == "3 / 3 composants")
 collectionPanel.SourcePrevious.scripts.OnClick()
 assert(collectionPanel.SourceIndex:GetText() == "2 / 3 composants" and goals[4234] == 5)
+collectionPanel.SourcePrevious.scripts.OnClick()
+assert(collectionPanel.SourceSearch:GetText() == "Vendor-Tron 1000")
+assert(LeatherTrackerFRDB.collection.lastSourceItem == 2321)
 LeatherTrackerFRDB.collection.goals = {}
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 collectionPanel.SourcesTab.scripts.OnClick()
-assert(collectionPanel.SourceEmpty:IsVisible() and not collectionPanel.SourcePlaces:IsShown())
+assert(not collectionPanel.SourceEmpty:IsVisible() and collectionPanel.SourcePlaces:IsShown())
 local messages = {}
 local originalPrint = print
 print = function(message) messages[#messages + 1] = message end
@@ -479,6 +503,22 @@ end
 collectionPanel.CollectionTab.scripts.OnClick()
 local currentGoals = LeatherTrackerFRDB.collection.goals
 currentGoals[2321], currentGoals[4234] = 2, 5
+collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
+local previousInventory = C_Container.GetContainerItemInfo
+C_Container.GetContainerItemInfo = function() return {itemID = 2321, stackCount = 2} end
+collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
+local complete, incomplete = goalRow(2321), goalRow(4234)
+assert(complete.point[3] < incomplete.point[3])
+button("Options").scripts.OnClick()
+button("Masquer les objectifs terminés").scripts.OnClick()
+button("Retour à ma collecte").scripts.OnClick()
+assert(not pcall(goalRow, 2321) and currentGoals[2321] == 2)
+collectionEvents.OnEvent(nil, "PLAYER_LOGIN")
+assert(LeatherTrackerFRDB.collection.hideCompleted and not pcall(goalRow, 2321))
+button("Options").scripts.OnClick()
+button("Masquer les objectifs terminés").scripts.OnClick()
+button("Retour à ma collecte").scripts.OnClick()
+C_Container.GetContainerItemInfo = previousInventory
 collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
 local first, last = goalRow(2321), goalRow(4234)
 first.goal:SetText("999")
@@ -515,10 +555,10 @@ assert(nativePoint[1] == 1443 and nativePoint[2] == 0.602 and nativePoint[3] == 
 MelloUI = {Map = {AddPin = function() error("repère rejeté") end, ClearPin = noop, Show = noop}}
 collectionEvents.OnEvent(nil, "ADDON_LOADED")
 nativePoint = nil
-button("Voir sur MelloUI").scripts.OnClick()
+button("Voir sur la carte").scripts.OnClick()
 assert(nativePoint and nativePoint[1] == 1443)
 button("Options").scripts.OnClick()
-button("Marchands : affichés").scripts.OnClick()
+button("Marchands").scripts.OnClick()
 assert(LeatherTrackerFRDB.collection.map.hiddenKinds.merchants)
 button("Retour à la source").scripts.OnClick()
 assert(not sourceDetails().Map:IsShown())

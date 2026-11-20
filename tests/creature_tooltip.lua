@@ -92,6 +92,9 @@ for _, kind in ipairs({"Humanoïde", "Élémentaire", "Humanoid", "Elemental"}) 
 end
 unit(876543, "Dépeçage (125)")
 assert(lines[3] == "Dépeçable" and lines[4] == "Dépeçage : 125 / 144")
+creatureType = "Bête"
+unit(876543)
+assert(lines[2] == "Dépeçage inconnu")
 hostile = false
 unit(876543)
 assert(#lines == 1)
@@ -180,6 +183,13 @@ gameEvent(nil, "LOOT_READY")
 assert(learned.successes[17].samples == 2)
 gameEvent(nil, "LOOT_OPENED")
 assert(learned.successes[17].samples == 3 and learned.loot.samples == 2)
+addon.SetSkinningLearningEnabled(false)
+corpseGUID = "Creature-0-0-0-0-876546-0000"
+unit(876546, "Dépeçage (80)", {{leftText = "Dépeçage (80)"}})
+assert(not LeatherTrackerFRDB.skinningObservations[876546])
+assert(addon.GetSkinningDiagnostic():find("désactivé", 1, true))
+addon.SetSkinningLearningEnabled(true)
+corpseGUID = "Creature-0-0-0-0-876545-0000"
 assert(loadfile("addon/CreatureTooltip.lua"))("LeatherTrackerFR", addon)
 unit(876545)
 assert(lines[3] == "Dépeçage : seuil inconnu / 85 · réussi à 65")

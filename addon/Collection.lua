@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.35"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.36"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -12,6 +12,9 @@ local sources = addon.componentSources
 local removed, pendingItem, pendingTime
 local optionsOpen = false
 local lastSourceItem
+local paintingSourceSearch
+local collectionScroll = 0
+local lastDiagnosticText
 local sourceOrder = {}
 local sourcesOpen = false
 local sourceHeading, sourceFooter, sourceLink, summary
@@ -171,6 +174,27 @@ local function mappable(source)
  return not source.tentative and type(source.map) == "number" and source.map > 0
   and type(source.x) == "number" and source.x >= 0 and source.x <= 1
   and type(source.y) == "number" and source.y >= 0 and source.y <= 1
+end
+
+local zoneMaps
+local function documentedZoneMap(source)
+ if not source.zone then return end
+ if not zoneMaps then
+  zoneMaps = {}
+  for _, records in pairs(addon.componentSources or {}) do
+   for _, record in ipairs(records) do
+    if mappable(record) and record.zone then
+     local previous = zoneMaps[record.zone]
+     if previous == nil then
+      zoneMaps[record.zone] = record.map
+     elseif previous ~= record.map then
+      zoneMaps[record.zone] = false
+     end
+    end
+   end
+  end
+ end
+ return zoneMaps[source.zone]
 end
 
 local function nativeWaypointAvailable(map)
@@ -355,7 +379,7 @@ end
 
 local function button(parent, label, width, handler)
  local widget = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
- widget:SetSize(width, 23)
+ widget:SetSize(width, 26)
  widget:SetText(label)
  widget:SetScript("OnClick", handler)
  return widget
@@ -405,6 +429,12 @@ local function label(parent, style, x, y)
  return widget
 end
 
+local function learningText()
+ if not addon.GetSkinningDiagnostic then return "Diagnostic de dépeçage indisponible." end
+ return ("%s\n%d fenêtre(s) complète(s) cette session."):format(
+  addon.GetSkinningDiagnostic(), addon.GetSkinningSessionSamples())
+end
+
 local function background(frame, red, green, blue)
  local texture = frame:CreateTexture(nil, "BACKGROUND")
  texture:SetAllPoints()
@@ -429,21 +459,44 @@ local function track(id, goal)
  refresh()
 end
 
+local function rememberScroll()
+ if scroll then
+  if sourcesOpen and activeItem and sourceSelection[activeItem] then
+   local previous = sourceSelection[activeItem]
+   previous.resultsScroll = scroll:GetVerticalScroll()
+   previous.placesScroll = panel.SourcePlaces.Scroll:GetVerticalScroll()
+  elseif not sourcesOpen then
+   collectionScroll = scroll:GetVerticalScroll()
+  end
+ end
+end
+
 local function showItem(id, emptySources)
  if not panel or not panel:GetParent():IsVisible() then return end
+ rememberScroll()
  activeItem = id
  sourcesOpen = id ~= nil or emptySources == true
  optionsOpen = false
  panel.SourcePicker:Hide()
- if id and id ~= lastSourceItem then
+ local state
+ if id then
   lastSourceItem = id
-  sourceSelection[id] = nil
-  panel.SourceSearch:SetText("")
+  if collection then collection.lastSourceItem = id end
+  state = sourceSelection[id]
+  if type(state) ~= "table" then state = {group = "all"} end
+  sourceSelection[id] = state
  end
- if scroll then scroll:SetVerticalScroll(0) end
- if panel.SourcePlaces then panel.SourcePlaces.Scroll:SetVerticalScroll(0) end
+ paintingSourceSearch = true
+ panel.SourceSearch:SetText(state and type(state.query) == "string" and state.query or "")
+ paintingSourceSearch = false
  if not panel:IsShown() then panel:Show() end
  refresh()
+ if scroll then
+  local position = state and tonumber(state.resultsScroll) or (not sourcesOpen and collectionScroll) or 0
+  scroll:SetVerticalScroll(math.min(position, scroll:GetVerticalScrollRange()))
+  local places = panel.SourcePlaces.Scroll
+  places:SetVerticalScroll(math.min(state and tonumber(state.placesScroll) or 0, places:GetVerticalScrollRange()))
+ end
 end
 
 local searchAccents = {
@@ -722,8 +775,10 @@ local function createPanel(frame)
   catalog.Body:SetWidth(math.max(width, 1))
  end)
  panel:SetScript("OnSizeChanged", function(_, width)
-  catalog:SetWidth(math.max(145, (width - 54) * 0.35))
-  if panel.SourcePlaces then panel.SourcePlaces:SetWidth(math.max(145, (width - 54) * 0.32)) end
+  catalog:SetWidth(math.max(120, (width - 64) * 0.32))
+  if panel.CompactControl then panel.CompactControl:SetWidth(width < 500 and 82 or 128) end
+  if panel.SourcePlaces then panel.SourcePlaces:SetWidth(math.max(120, (width - 64) * 0.27)) end
+  pendingItemRefresh = true
  end)
  panel.Back = button(panel, "<", 26, function() showItem(nil) end)
  panel.Back:SetPoint("TOPLEFT", 19, -44)
@@ -777,17 +832,17 @@ local function createPanel(frame)
  pickerScroll:SetScrollChild(pickerBody)
  picker.Scroll, picker.Body, picker.Rows = pickerScroll, pickerBody, {}
  local toolbar = CreateFrame("Frame", nil, panel)
- toolbar:SetPoint("TOPLEFT", 65, -5)
+ toolbar:SetPoint("TOPLEFT", 18, -5)
  toolbar:SetPoint("TOPRIGHT", -132, -5)
  toolbar:SetHeight(30)
  background(toolbar, 0.18, 0.13, 0.08)
- panel.CompactControl = button(toolbar, "Panneau compact", 140, function()
+ panel.CompactControl = button(toolbar, "Panneau compact", 128, function()
   collection.compact = not collection.compact
   refresh()
  end)
  panel.CompactControl:SetPoint("LEFT", 5, 0)
  panel.SourcesTab = button(toolbar, "Sources", 73, function()
-  showItem(#sourceOrder > 0 and (lastSourceItem or sourceOrder[1]) or nil, true)
+  showItem(lastSourceItem or sourceOrder[1], true)
  end)
  panel.SourcesTab:SetPoint("LEFT", panel.CompactControl, "RIGHT", 6, 0)
  panel.CollectionTab = button(toolbar, "Ma collecte", 92, function() showItem(nil) end)
@@ -798,6 +853,14 @@ local function createPanel(frame)
   refresh()
  end)
  panel.OptionsButton:SetPoint("LEFT", panel.CollectionTab, "RIGHT", 4, 0)
+ for _, tab in ipairs({panel.SourcesTab, panel.CollectionTab, panel.OptionsButton}) do
+  local underline = tab:CreateTexture(nil, "OVERLAY")
+  underline:SetPoint("BOTTOMLEFT", 8, 2)
+  underline:SetPoint("BOTTOMRIGHT", -8, 2)
+  underline:SetHeight(2)
+  underline:SetColorTexture(0.90, 0.70, 0.30, 1)
+  tab.ActiveLine = underline
+ end
  panel.MapSettings = CreateFrame("Frame", nil, panel)
  panel.MapSettings:SetPoint("TOPLEFT", 18, -44)
  panel.MapSettings:SetPoint("BOTTOMRIGHT", -18, 16)
@@ -806,49 +869,84 @@ local function createPanel(frame)
  settingsPage:SetPoint("TOPLEFT", 0, 0)
  settingsPage:SetPoint("BOTTOMRIGHT", -18, 0)
  local settingsBody = CreateFrame("Frame", nil, settingsPage)
- settingsBody:SetSize(530, 550)
+ settingsBody:SetSize(1, 732)
  settingsPage:SetScrollChild(settingsBody)
- label(settingsBody, "GameFontNormalLarge", 4, -5):SetText("Options de LeatherTracker")
+ settingsPage:SetScript("OnSizeChanged", function(_, width) settingsBody:SetWidth(math.max(1, width)) end)
+ label(settingsBody, "GameFontNormalLarge", 4, -5):SetText("Options")
  local backOptions = button(panel.MapSettings, "", 159, function()
   optionsOpen = false
   refresh()
  end)
  backOptions:SetPoint("TOPRIGHT", -23, 0)
  panel.OptionsBack = backOptions
- label(settingsBody, "GameFontNormal", 8, -49):SetText("Suivi compact")
- local function setting(key, y, handler)
-  local control = button(settingsBody, "", 270, function()
+ local function section(text, y)
+  label(settingsBody, "GameFontNormal", 8, y):SetText(text)
+ end
+ local function setting(key, text, y, handler)
+  local control = CreateFrame("CheckButton", nil, settingsBody, "UICheckButtonTemplate")
+  control:SetSize(24, 24)
+  control:SetPoint("TOPLEFT", 8, y)
+  local caption = label(control, "GameFontHighlight", 27, -5)
+  caption:SetText(text)
+  control:SetHitRectInsets(0, -math.ceil(caption:GetStringWidth() or 0) - 4, 0, 0)
+  control:SetScript("OnClick", function()
    handler()
    refresh()
   end)
-  control:SetPoint("TOPLEFT", 8, y)
   mapControls[key] = control
  end
- for i, key in ipairs({"compact", "locked", "collapsed", "notifyComplete"}) do
-  setting(key, -67 - (i - 1) * 26, function() collection[key] = not collection[key] end)
+ section("Suivi compact", -41)
+ for i, row in ipairs({
+  {"compact", "Afficher le suivi"}, {"locked", "Verrouiller la position"},
+  {"collapsed", "Réduire le panneau"}, {"notifyComplete", "Notifier les objectifs atteints"},
+ }) do
+  local key = row[1]
+  setting(key, row[2], -59 - (i - 1) * 25, function() collection[key] = not collection[key] end)
  end
- label(settingsBody, "GameFontNormal", 8, -178):SetText("Carte et filtres")
- local nextMode = {manual = "automatic", automatic = "off", off = "manual"}
- setting("mode", -196, function() collection.map.mode = nextMode[collection.map.mode] end)
- for i, key in ipairs({"multiple", "hideDone", "tips"}) do
-  setting(key, -196 - i * 26, function()
+ section("Collecte", -170)
+ setting("hideCompleted", "Masquer les objectifs terminés", -188, function()
+  collection.hideCompleted = not collection.hideCompleted
+ end)
+ section("Carte", -224)
+ mapControls.modes = {}
+ for i, key in ipairs({"manual", "automatic", "off"}) do
+  local mode = button(settingsBody, mapModes[key], 91, function()
+   collection.map.mode = key
+   refresh()
+  end)
+  mode:SetPoint("TOPLEFT", 8 + (i - 1) * 95, -243)
+  mapControls.modes[key] = mode
+ end
+ for i, row in ipairs({
+  {"multiple", "Afficher plusieurs composants"}, {"hideDone", "Masquer les objectifs atteints sur la carte"},
+  {"tips", "Afficher les infobulles"},
+ }) do
+  local key = row[1]
+  setting(key, row[2], -274 - (i - 1) * 25, function()
    collection.map[key] = not collection.map[key]
    if key == "multiple" and not collection.map.multiple then
     selectedPins, collection.map.manualItems = {}, {}
    end
   end)
  end
- setting("mapTracked", -301, function() setMapLayer(0, collection.map.layersHidden) end)
+ setting("mapTracked", "Afficher les composants suivis", -349, function() setMapLayer(0, collection.map.layersHidden) end)
  for index, layer in ipairs(layerDefinitions) do
-  setting(layer.id, -301 - index * 26, function()
+  setting(layer.id, layer.name, -349 - index * 25, function()
    setMapLayer(layer.id, collection.map.hiddenKinds[layer.id])
   end)
  end
- label(settingsBody, "GameFontNormal", 8, -421):SetText("Informations")
- label(settingsBody, "GameFontHighlight", 8, -442):SetText("LeatherTracker FR  ·  "..version)
- mapControls.layer = label(settingsBody, "GameFontHighlight", 8, -464)
- mapControls.layerHelp = label(settingsBody, "GameFontHighlightSmall", 8, -486)
- mapControls.layerHelp:SetWidth(460)
+ section("Apprentissage", -493)
+ setting("learning", "Enregistrer les dépeçages dans cette sauvegarde", -511, function()
+  addon.SetSkinningLearningEnabled(LeatherTrackerFRDB.skinningLearningDisabled == true)
+ end)
+ mapControls.learningState = label(settingsBody, "GameFontHighlightSmall", 8, -545)
+ mapControls.learningState:SetPoint("TOPRIGHT", -8, -545)
+ mapControls.learningState:SetText("")
+ section("Informations", -581)
+ label(settingsBody, "GameFontHighlight", 8, -600):SetText("LeatherTracker FR  ·  "..version)
+ mapControls.layer = label(settingsBody, "GameFontHighlight", 8, -621)
+ mapControls.layerHelp = label(settingsBody, "GameFontHighlightSmall", 8, -642)
+ mapControls.layerHelp:SetPoint("TOPRIGHT", -8, -642)
  mapControls.openLayers = button(settingsBody, "Ouvrir les calques MelloUI", 240, function()
   local module = mapLayersModule()
   if module then
@@ -856,7 +954,7 @@ local function createPanel(frame)
    if not module:OpenLayers() then print("LeatherTracker : calques MelloUI indisponibles.") end
   end
  end)
- mapControls.openLayers:SetPoint("TOPLEFT", 8, -514)
+ mapControls.openLayers:SetPoint("TOPLEFT", 8, -690)
  scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
  scroll:SetPoint("TOPLEFT", 18, -103)
  scroll:SetPoint("BOTTOMRIGHT", -35, 16)
@@ -878,6 +976,7 @@ local function createPanel(frame)
  sourceFooter:SetPoint("TOPRIGHT", -8, -140)
  sourceLink = input(list, 264, 160)
  sourceLink:SetPoint("TOPLEFT", 14, -180)
+ sourceLink:SetPoint("TOPRIGHT", -12, -180)
  sourceLink:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
  local places = CreateFrame("Frame", nil, panel)
  panel.SourcePlaces = places
@@ -906,6 +1005,7 @@ local function createPanel(frame)
  search:SetPoint("TOPLEFT", 8, 0)
  local sort = button(searchBar, "", 116, function()
   sortSourcesByRate = not sortSourcesByRate
+  collection.sortSourcesByRate = sortSourcesByRate
   scroll:SetVerticalScroll(0)
   refresh()
  end)
@@ -916,6 +1016,8 @@ local function createPanel(frame)
  placeholder:SetText("Rechercher une source")
  search:SetScript("OnTextChanged", function(self)
   placeholder:SetShown(self:GetText() == "")
+  if paintingSourceSearch then return end
+  if activeItem and sourceSelection[activeItem] then sourceSelection[activeItem].query = self:GetText() end
   scroll:SetVerticalScroll(0)
   refresh()
  end)
@@ -991,8 +1093,21 @@ refresh = function()
   local showSourcesTab = sourcesOpen and not optionsOpen
   local showSource = showSourcesTab and activeItem ~= nil
   local showCollection = not sourcesOpen and not optionsOpen
+  local objectives = {}
+  if showCollection then
+   for _, id in ipairs(ids) do
+    local owned = stock(id)
+    if not collection.hideCompleted or not owned or owned < collection.goals[id] then objectives[#objectives + 1] = id end
+   end
+   table.sort(objectives, function(a, b)
+    local doneA = (stock(a) or 0) >= collection.goals[a]
+    local doneB = (stock(b) or 0) >= collection.goals[b]
+    if doneA ~= doneB then return not doneA end
+    return a < b
+   end)
+  end
   for index, row in ipairs(rows) do
-   local id = showCollection and ids[index]
+   local id = showCollection and objectives[index]
    if row.item ~= id then
     row.item = nil
     row.goal:ClearFocus()
@@ -1003,6 +1118,7 @@ refresh = function()
   for _, tab in ipairs({panel.SourcesTab, panel.CollectionTab, panel.OptionsButton}) do
    local selected = (tab == panel.SourcesTab and showSourcesTab) or (tab == panel.CollectionTab and showCollection)
     or (tab == panel.OptionsButton and optionsOpen)
+   tab.ActiveLine:SetShown(selected)
    if selected then tab:LockHighlight() else tab:UnlockHighlight() end
   end
   panel.OptionsBack:SetText(sourcesOpen and "Retour à la source" or "Retour à ma collecte")
@@ -1028,7 +1144,7 @@ refresh = function()
   end
   panel.Catalog:SetShown(showCollection)
   if showCollection then
-   panel.Catalog:SetWidth(math.max(145, (panel:GetWidth() - 54) * 0.35))
+   panel.Catalog:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.32))
    renderComponentCatalog()
   end
   panel.Back:SetShown(showSource)
@@ -1078,15 +1194,22 @@ refresh = function()
   panel.SourcePlaces:SetShown(showSource)
   panel.SourceSearchBar:SetShown(showSource)
   panel.SourceSort:SetText(sortSourcesByRate and "Tri : taux" or "Tri : nom")
-  if showSource then panel.SourcePlaces:SetWidth(math.max(145, (panel:GetWidth() - 54) * 0.32)) end
+  if showSource then panel.SourcePlaces:SetWidth(math.max(120, (panel:GetWidth() - 64) * 0.27)) end
   sourceHeading:SetShown(showSource)
   sourceFooter:SetShown(showSource)
   sourceLink:Hide()
-  panel.CompactControl:SetText(collection.compact and "Masquer le suivi" or "Afficher le suivi")
-  mapControls.compact:SetText(collection.compact and "Suivi compact : affiché" or "Suivi compact : masqué")
-  mapControls.locked:SetText(collection.locked and "Position : verrouillée" or "Position : déverrouillée")
-  mapControls.collapsed:SetText(collection.collapsed and "Panneau : réduit" or "Panneau : développé")
-  mapControls.notifyComplete:SetText("Notification d’objectif : "..(collection.notifyComplete and "oui" or "non"))
+  local compactLabel = collection.compact and "Masquer le suivi" or "Afficher le suivi"
+  if panel:GetWidth() < 500 then compactLabel = collection.compact and "Masquer" or "Afficher" end
+  panel.CompactControl:SetText(compactLabel)
+  if optionsOpen then
+   for _, key in ipairs({"compact", "locked", "collapsed", "notifyComplete", "hideCompleted"}) do
+    mapControls[key]:SetChecked(not not collection[key])
+   end
+   mapControls.learning:SetChecked(not LeatherTrackerFRDB.skinningLearningDisabled)
+   mapControls.learning:SetEnabled(type(addon.GetSkinningDiagnostic) == "function")
+   lastDiagnosticText = learningText()
+   mapControls.learningState:SetText(lastDiagnosticText)
+  end
   local settings = collection.map
   local api = mapAPI()
   mapControls.openLayers:SetShown(mapLayersModule() ~= nil)
@@ -1096,14 +1219,18 @@ refresh = function()
   mapControls.layerHelp:SetText(not api and "Active le module Carte de MelloUI."
    or type(api.LeatherTrackerSetLayers) == "function" and "Carte → Calques → LeatherTracker FR. Choisis le mode automatique pour afficher toutes les sources connues."
    or "Utilise les filtres ci-dessus. Diagnostic : /ltmapdebug.")
-  mapControls.mapTracked:SetText("Composants suivis : "..(settings.layersHidden and "masqués" or "affichés"))
-  for _, layer in ipairs(layerDefinitions) do
-   mapControls[layer.id]:SetText(layer.name.." : "..(settings.hiddenKinds[layer.id] and "masqués" or "affichés"))
+  if optionsOpen then
+   mapControls.mapTracked:SetChecked(not settings.layersHidden)
+   for _, layer in ipairs(layerDefinitions) do
+    mapControls[layer.id]:SetChecked(not settings.hiddenKinds[layer.id])
+   end
+   for mode, control in pairs(mapControls.modes) do
+    control:SetEnabled(mode ~= settings.mode)
+   end
+   for _, key in ipairs({"multiple", "hideDone", "tips"}) do
+    mapControls[key]:SetChecked(not not settings[key])
+   end
   end
-  mapControls.mode:SetText("Mode : "..mapModes[settings.mode])
-  mapControls.multiple:SetText("Plusieurs composants : "..(settings.multiple and "oui" or "non"))
-  mapControls.hideDone:SetText("Masquer les objectifs atteints : "..(settings.hideDone and "oui" or "non"))
-  mapControls.tips:SetText("Infobulles : "..(settings.tips and "oui" or "non"))
   scroll:ClearAllPoints()
   if showCollection then
    scroll:SetPoint("TOPLEFT", panel.Catalog, "TOPRIGHT", 17, -49)
@@ -1111,7 +1238,7 @@ refresh = function()
    scroll:SetPoint("TOPLEFT", panel.SourceSearchBar, "BOTTOMLEFT", 0, -4)
   end
   scroll:SetPoint("BOTTOMRIGHT", -35, 37)
-  panel.Message:SetShown(showCollection and #ids == 0)
+  panel.Message:SetShown(showCollection and #objectives == 0)
   if showSource then
    local owned, goal = stock(activeItem), collection.goals[activeItem]
    local sourcesForItem = catalogFor(activeItem)
@@ -1119,11 +1246,8 @@ refresh = function()
    addSkinningObservations(sourcesForItem, activeItem)
    panel.SourceCounts:SetText(("En sac : %s   •   Objectif : %s   •   Manquant : %s"):format(
     owned or "–", goal or "–", owned and goal and math.max(0, goal - owned) or "–"))
-   local mapped = false
-   for _, source in ipairs(sourcesForItem) do if source.map then mapped = true; break end end
    local api = mapAPI()
    local settings = collection.map
-   local types = {["Récolte"] = "Récolte", Achat = "Marchand", Ouverture = "Contenant", Butin = "Créature", ["Pêche"] = "Pêche", ["Dépeçage"] = "Dépeçage", Fabrication = "Fabrication", ["Accès"] = "Accès au donjon"}
    local filters, groups = sourceLayout(sourcesForItem)
    local selection = sourceSelection[activeItem]
    if not selection then
@@ -1190,7 +1314,7 @@ refresh = function()
    local rowY, rowHeight = 27, 0
    local usable = math.max(1, list:GetWidth() - 14)
    local columns = usable >= 470 and 2 or 1
-   local cardWidth = (usable - (columns - 1) * 10) / columns
+   local cardWidth = (usable - (columns - 1) * 12) / columns
    for rowIndex, index in ipairs(matches) do
     local source = sourcesForItem[index]
     local entry = sourceLines[rowIndex]
@@ -1199,7 +1323,16 @@ refresh = function()
      background(entry, 0.17, 0.13, 0.095)
      entry.Name = label(entry, "GameFontNormalLarge", 10, -9)
      entry.Info = label(entry, "GameFontHighlight", 10, -31)
-     entry.Map = button(entry, "Voir sur MelloUI", 127, nil)
+     entry.Map = button(entry, "Voir sur la carte", 121, nil)
+     entry.Details = button(entry, "Détails", 67, nil)
+     entry.Details:SetPoint("BOTTOMRIGHT", -8, 9)
+     entry.Details:SetScript("OnEnter", function(self)
+      GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+      GameTooltip:AddLine(entry.sourceName)
+      for _, line in ipairs(entry.details) do GameTooltip:AddLine(line, 0.88, 0.85, 0.78, true) end
+      GameTooltip:Show()
+     end)
+     entry.Details:SetScript("OnLeave", function() GameTooltip:Hide() end)
      entry.Map:SetPoint("BOTTOMLEFT", 10, 9)
      local ok, model = pcall(CreateFrame, "PlayerModel", nil, entry)
      if ok and model and type(model.SetCreature) == "function" then
@@ -1225,19 +1358,9 @@ refresh = function()
      entry.RateBox = rateBox
 
      background(rateBox, 0.10, 0.085, 0.065)
-     rateBox.Title = label(rateBox, "GameFontNormal", 12, -7)
-     rateBox.Value = label(rateBox, "GameFontNormalLarge", 12, -26)
-     rateBox.Sample = label(rateBox, "GameFontHighlight", 12, -48)
-     rateBox.Sample:SetPoint("TOPRIGHT", -8, -48)
-     rateBox.Source = label(rateBox, "GameFontHighlightSmall", 12, -74)
-     rateBox.Source:SetPoint("TOPRIGHT", -8, -74)
-     rateBox.Bar = CreateFrame("StatusBar", nil, rateBox)
-     rateBox.Bar:SetPoint("BOTTOMLEFT", 12, 6)
-     rateBox.Bar:SetPoint("BOTTOMRIGHT", -12, 6)
-     rateBox.Bar:SetHeight(4)
-     rateBox.Bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-     rateBox.Bar:SetStatusBarColor(0.82, 0.58, 0.23)
-     rateBox.Bar:SetMinMaxValues(0, 100)
+     rateBox.Value = label(rateBox, "GameFontNormal", 8, -5)
+     rateBox.Sample = label(rateBox, "GameFontHighlightSmall", 8, -22)
+     rateBox.Sample:SetPoint("TOPRIGHT", -8, -22)
      sourceLines[rowIndex] = entry
     end
     local hasModel = false
@@ -1270,30 +1393,22 @@ refresh = function()
     entry.MerchantIcon:SetTexture(sourceIcon or (merchant and "Interface\\Icons\\INV_Misc_Coin_01" or nil))
     entry.MerchantIcon:SetShown(not entry.modelReady and (sourceIcon ~= nil or merchant))
     local rateBox = entry.RateBox
-    local hasRateBox = not merchant and source.method ~= "Accès" and source.method ~= "Fabrication"
-    local hasSample = source.observations and (source.obtained ~= nil or source.observedRate ~= nil)
-    rateBox:SetShown(hasRateBox)
-    rateBox.Title:SetText(hasSample and "Taux de récupération observé" or "Taux non disponible")
-    rateBox.Value:SetShown(hasSample)
-    rateBox.Sample:SetShown(hasSample)
-    rateBox.Source:SetShown(hasSample)
-    rateBox.Bar:SetShown(hasSample)
+    local hasSample = type(source.observations) == "number" and source.observations > 0
+     and (source.obtained ~= nil or source.observedRate ~= nil)
+    rateBox:SetShown(hasSample)
     if hasSample then
-     local observedRate = source.observedRate or 100 * source.obtained / source.observations
-     rateBox.Value:SetText((("%.1f %%"):format(observedRate):gsub("%.", ",")))
+     rateBox.Value:SetText((("%.1f %%"):format(rate(source)):gsub("%.", ",")))
      rateBox.Sample:SetText(source.personalSkinning and ("%d sur %d fenêtres de dépeçage"):format(source.obtained, source.observations)
       or source.obtained and ("%d obtention(s) sur %d observations"):format(source.obtained, source.observations)
       or ("%d corps dépecés"):format(source.observations))
-     rateBox.Source:SetText((source.provenance or "ForeverDB.net")..
-      (source.observations < 30 and "  •  Échantillon limité" or "  •  Fréquence observée"))
-     rateBox.Bar:SetValue(observedRate)
     end
-    rateBox:SetHeight(hasSample and 106 or 25)
+    rateBox:SetHeight(42)
 
     entry:ClearAllPoints()
     local column = (rowIndex - 1) % columns
-    entry:SetPoint("TOPLEFT", 7 + column * (cardWidth + 10), -rowY)
+    entry:SetPoint("TOPLEFT", 7 + column * (cardWidth + 12), -rowY)
     entry:SetWidth(cardWidth)
+    entry.Map:SetWidth(math.min(121, math.max(75, cardWidth - 96)))
 
     local textLeft = (hasModel or merchant or sourceIcon) and 82 or 10
     entry.Name:ClearAllPoints()
@@ -1304,42 +1419,38 @@ refresh = function()
     entry.Info:ClearAllPoints()
     entry.Info:SetPoint("TOPLEFT", 10, -69)
     entry.Info:SetPoint("TOPRIGHT", -10, -69)
-    entry.Info:SetSpacing(4)
-    entry.Name:SetText(source.name.."  •  "..(types[source.method] or "Autre source"))
-    local details = {}
-    local function field(icon, name, value, color)
-     details[#details + 1] = "|TInterface\\Icons\\"..icon..":15:15|t  |cff83c9ff"..name.."|r  |cff"..color..value.."|r"
+    entry.Info:SetSpacing(3)
+    entry.Name:SetText(source.name)
+    local provenance = source.provenance or source.locationSource or "ForeverDB.net"
+    local primary = {source.method .. (source.level and ("  •  Niv. "..source.level) or "")}
+    if source.zone then primary[#primary + 1] = source.zone end
+    if source.skill then primary[#primary + 1] = source.skill end
+    primary[#primary + 1] = source.tentative and "Piste Classic à confirmer" or provenance
+    entry.Info:SetText(table.concat(primary, "\n"))
+    entry.sourceName = source.name
+    local details = {provenance}
+    if source.creatureID then details[#details + 1] = "PNJ #"..source.creatureID end
+    if mappable(source) then
+     details[#details + 1] = ("Position %.1f / %.1f%s"):format(source.x * 100, source.y * 100,
+      source.approximate and " (approximative)" or "")
+    elseif source.zone then
+     details[#details + 1] = "Zone connue. Position précise non vérifiée."
     end
-    field("INV_Misc_Bag_10", "Méthode", source.method, source.tentative and "ffc477" or "a5e7ad")
-    if source.tentative then field("INV_Misc_Note_01", "Vérification", "Piste Classic à confirmer sur Forever", "ffc477") end
-    if source.level or source.creatureID then
-     field("Ability_Warrior_BattleShout", "Niveau", tostring(source.level or "Non vérifié"), source.level and "a5e7ad" or "ff9c87")
+    if source.locationSource and source.locationSource ~= provenance then details[#details + 1] = source.locationSource end
+    if source.shop then details[#details + 1] = source.shop end
+    if source.context then details[#details + 1] = source.context end
+    if source.learnedFrom then details[#details + 1] = source.learnedFrom end
+    if hasSample then
+     details[#details + 1] = "Fréquence observée dans l’échantillon."
+     if source.observations < 30 then details[#details + 1] = "Échantillon limité." end
     end
-    if source.skill or source.method == "Dépeçage" then
-     field("INV_Misc_LeatherScrap_02", "Compétence", source.skill or "Seuil de dépeçage non vérifié", source.skill and "a5e7ad" or "ffc477")
-    end
-    if source.zone then field("INV_Misc_Map_01", "Zone", source.zone, source.tentative and "ffc477" or "a5e7ad") end
-    if source.map then
-     field("INV_Misc_Map_01", "Position", ("%.1f / %.1f%s"):format(source.x * 100, source.y * 100,
-      source.approximate and " (approximative)" or ""), source.approximate and "ffc477" or "a5e7ad")
-    elseif source.method ~= "Fabrication" then
-     field("INV_Misc_Map_01", "Position", source.zone and "Zone connue — position précise non vérifiée" or "Localisation indisponible", "ff9c87")
-    end
-    if source.map and source.locationSource and source.provenance and source.locationSource ~= source.provenance then
-     field("INV_Misc_Map_01", "Source du repère", source.locationSource, "a4d5ff")
-    end
-    if source.shop then field("INV_Misc_Coin_01", "Achat", source.shop, "e6e0d9") end
-    if source.creatureID then field("INV_Misc_Note_01", "Identifiant", "PNJ #"..source.creatureID, "a4d5ff") end
-    if source.learnedFrom then field("INV_Misc_Book_09", "Apprentissage", source.learnedFrom, "a4d5ff") end
-    if source.context then field("INV_Misc_Note_01", "Détail", source.context, "e6e0d9") end
-    field("INV_Misc_Book_09", "Source", source.provenance or source.locationSource or "ForeverDB.net", "a4d5ff")
-    entry.Info:SetText(table.concat(details, "\n"))
-    local infoHeight = math.max(#details * 19, entry.Info:GetStringHeight() or 0)
-    local ratesY = 79 + infoHeight
+    entry.details = details
+    local infoHeight = math.max(#primary * 16, entry.Info:GetStringHeight() or 0)
+    local ratesY = 74 + infoHeight
     rateBox:ClearAllPoints()
     rateBox:SetPoint("TOPLEFT", 8, -ratesY)
     rateBox:SetPoint("TOPRIGHT", -8, -ratesY)
-    local height = ratesY + (hasRateBox and (hasSample and 106 or 25) or 0) + 36
+    local height = ratesY + (hasSample and 42 or 0) + 42
     entry:SetHeight(height)
     rowHeight = math.max(rowHeight, height)
     if column == columns - 1 or rowIndex == #matches then
@@ -1353,10 +1464,24 @@ refresh = function()
     local canMap = mappable(source) and (api or tomtom or native) and settings.mode ~= "off"
      and not settings.layersHidden and not settings.hiddenKinds[sourceLayer(source)]
      and not (settings.hideDone and owned and goal and owned >= goal)
-    entry.Map:SetText((api or tomtom) and "Voir sur MelloUI" or "Voir sur la carte")
-    entry.Map:SetEnabled(not not canMap)
-    entry.Map:SetShown(canMap)
+    local zone = not mappable(source) and ((not source.tentative and type(source.map) == "number" and source.map > 0 and source.map)
+     or documentedZoneMap(source))
+    local canOpenZone = not not (zone and (api or (WorldMapFrame and type(WorldMapFrame.SetMapID) == "function")))
+    entry.Map:SetText(canOpenZone and "Voir la zone" or "Voir sur la carte")
+    entry.Map:SetEnabled(not not (canMap or canOpenZone))
+    entry.Map:SetShown(canMap or canOpenZone)
     entry.Map:SetScript("OnClick", function()
+     if canOpenZone then
+      if api then
+       local ok, opened = pcall(api.Show, api, zone)
+       if ok and opened ~= false then return end
+      end
+      if WorldMapFrame and type(WorldMapFrame.SetMapID) == "function" then
+       WorldMapFrame:Show()
+       WorldMapFrame:SetMapID(zone)
+      end
+      return
+     end
      if not canMap then return end
      if api then
       preferredMapItem = activeItem
@@ -1397,8 +1522,7 @@ refresh = function()
    sourceFooter:SetText(#sourcesForItem == 0
     and "Aucune source vérifiée importée pour cet objet.\nLocalisation non vérifiée."
     or (#matches == 0 and "Aucune source ne correspond à la recherche.")
-    or (mapped and "Coordonnées et provenance indiquées sur chaque fiche.\nProvenance indiquée sur chaque source."
-     or "Localisation : zone indiquée lorsqu’elle est documentée. Aucun point vérifié.\nProvenance indiquée sur chaque source."))
+    or "Données documentaires et observations personnelles.")
    if #sourcesForItem > 0 then
     sourceLink:ClearAllPoints()
     sourceLink:SetPoint("TOPLEFT", 14, -footerY - 40)
@@ -1407,12 +1531,12 @@ refresh = function()
     sourceLink:Show()
    end
    list:SetHeight(footerY + 72)
-  elseif showCollection and #ids == 0 then
+  elseif showCollection and #objectives == 0 then
    list:SetHeight(52)
-   panel.Message:SetText("Utilise + dans le catalogue pour suivre un composant.")
+   panel.Message:SetText(#ids > 0 and "Tous les objectifs sont atteints." or "Utilise + dans le catalogue pour suivre un composant.")
   elseif showCollection then
-   list:SetHeight(81 * #ids)
-   for index, id in ipairs(ids) do
+   list:SetHeight(81 * #objectives)
+   for index, id in ipairs(objectives) do
     local row = rows[index] or createRow(index)
     rows[index], row.item = row, id
     local goal, owned = collection.goals[id], stock(id)
@@ -1449,7 +1573,7 @@ refresh = function()
     row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
     row:SetScript("OnClick", function(self) openCompactItem(self.item) end)
     row.name = label(row, "GameFontHighlightSmall", 25, -5)
-    row.name:SetWidth(150)
+    row.name:SetPoint("RIGHT", -67, 0)
     row.name:SetWordWrap(false)
     row.count = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.count:SetPoint("RIGHT", -2, 0)
@@ -1463,7 +1587,9 @@ refresh = function()
    local name, icon = itemInfo(id)
    row.icon:SetTexture(icon)
    row.name:SetText(name)
-   row.count:SetText(("%s/%d"):format(stock(id) or "–", collection.goals[id]))
+   local owned, goal = stock(id), collection.goals[id]
+   row.count:SetText(("%s/%d"):format(owned or "–", goal))
+   row.count:SetTextColor(owned and owned >= goal and 0.50 or 0.93, 0.93, 0.64)
    row:Show()
   end
  elseif compact then compact:Hide() end
@@ -1638,9 +1764,11 @@ end
 
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_LOGIN")
+events:RegisterEvent("PLAYER_LOGOUT")
 events:RegisterEvent("BAG_UPDATE_DELAYED")
 events:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 events:SetScript("OnEvent", function(_, event, id)
+ if event == "PLAYER_LOGOUT" then rememberScroll(); return end
  if event == "GET_ITEM_INFO_RECEIVED" then
   if requestedItems[id] == "pending" then
    requestedItems[id] = "received"
@@ -1655,6 +1783,10 @@ events:SetScript("OnEvent", function(_, event, id)
   LeatherTrackerFRDB = LeatherTrackerFRDB or {}
   LeatherTrackerFRDB.collection = LeatherTrackerFRDB.collection or {}
   collection = LeatherTrackerFRDB.collection
+  lastSourceItem = itemID(collection.lastSourceItem)
+  collection.sourceViews = type(collection.sourceViews) == "table" and collection.sourceViews or {}
+  sourceSelection = collection.sourceViews
+  sortSourcesByRate = collection.sortSourcesByRate == true
   collection.goals, collection.position = collection.goals or {}, collection.position or {}
   collection.recipeComponents = type(collection.recipeComponents) == "table" and collection.recipeComponents or {}
   for key in pairs(collection.recipeComponents) do
@@ -1690,7 +1822,14 @@ local elapsed = 0
 events:SetScript("OnUpdate", function(_, dt)
  elapsed = elapsed + dt
  if elapsed < 0.2 then return end
- if pendingItemRefresh then refresh() end
+ if pendingItemRefresh and panel and panel:IsVisible() then refresh() end
+ if optionsOpen and panel and panel:IsVisible() and addon.GetSkinningDiagnostic then
+  local diagnostic = learningText()
+  if diagnostic ~= lastDiagnosticText then
+   mapControls.learningState:SetText(diagnostic)
+   lastDiagnosticText = diagnostic
+  end
+ end
  if panel and panel:IsShown() then
   local api = mapAPI()
   local mapVisible = api and type(api.IsShown) == "function" and api:IsShown() or false

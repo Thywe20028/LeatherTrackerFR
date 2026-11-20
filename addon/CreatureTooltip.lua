@@ -159,14 +159,18 @@ local nonSkinnableTypes = {
  Humanoid = true, ["Humanoïde"] = true,
 }
 
-local function nonSkinnableEnemy(unit, guid)
- if not UnitIsEnemy or not UnitCreatureType then return false end
+local function matchingEnemy(unit, guid)
+ if not UnitIsEnemy then return false end
  unit = unit or "mouseover"
  local unitGuid = UnitGUID(unit)
  if (issecretvalue and issecretvalue(unitGuid)) or unitGuid ~= guid then return false end
  local enemy = UnitIsEnemy("player", unit)
- if (issecretvalue and issecretvalue(enemy)) or not enemy then return false end
- local creatureType = UnitCreatureType(unit)
+ return not (issecretvalue and issecretvalue(enemy)) and not not enemy
+end
+
+local function nonSkinnableEnemy(unit, guid)
+ if not UnitCreatureType or not matchingEnemy(unit, guid) then return false end
+ local creatureType = UnitCreatureType(unit or "mouseover")
  return not (issecretvalue and issecretvalue(creatureType)) and nonSkinnableTypes[creatureType] == true
 end
 
@@ -180,10 +184,27 @@ end
 local pendingSkinning
 local lootWindowOpen = false
 local lastObservation
+local sessionSamples = 0
+function addon.GetSkinningDiagnostic()
+ if LeatherTrackerFRDB and LeatherTrackerFRDB.skinningLearningDisabled then
+  return "Enregistrement local désactivé."
+ end
+ return lastObservation or "Aucune tentative de dépeçage observée pendant cette session."
+end
+
+function addon.GetSkinningSessionSamples()
+ return sessionSamples
+end
+
+function addon.SetSkinningLearningEnabled(enabled)
+ LeatherTrackerFRDB.skinningLearningDisabled = not enabled
+ pendingSkinning = nil
+end
+
 SLASH_LEATHERTRACKERSKINDEBUG1 = "/ltskindebug"
 if SlashCmdList then
  SlashCmdList.LEATHERTRACKERSKINDEBUG = function()
-  print("LeatherTracker — " .. (lastObservation or "Aucune tentative de dépeçage observée pendant cette session."))
+  print("LeatherTracker — " .. addon.GetSkinningDiagnostic())
  end
 end
 
@@ -209,6 +230,7 @@ local function finishSkinning()
    entry.loot.byLevel[attempt.level] = bucket
    recordSample(bucket, attempt.items)
   end
+  sessionSamples = sessionSamples + 1
   lastObservation = "Dépeçage et fenêtre complète enregistrés."
   if addon.SkinningSourcesChanged then addon.SkinningSourcesChanged(entry.loot.drops) end
  else
@@ -240,6 +262,7 @@ skinningEvents:SetScript("OnEvent", function(_, event, unit, a, b, spellID)
  elseif event == "LOOT_CLOSED" then
   lootWindowOpen = false
  end
+ if LeatherTrackerFRDB and LeatherTrackerFRDB.skinningLearningDisabled then return end
  if event == "UNIT_SPELLCAST_SENT" then
   if pendingSkinning then
    lastObservation = "Tentative précédente interrompue par un nouveau sort."
@@ -344,7 +367,8 @@ local function render(tooltip, data)
   level = matchingLevel(unit, guid)
  end
  -- Record only the client's structured data, never lines added to the visible tooltip.
- if skin == true and data and type(data.lines) == "table" then
+ if skin == true and data and type(data.lines) == "table"
+  and not (LeatherTrackerFRDB and LeatherTrackerFRDB.skinningLearningDisabled) then
   learned = learnSkinning(creatureID, level, required)
  end
  if skin == nil and (learned or (entry and entry.skinnable)) then skin = true end
@@ -360,6 +384,8 @@ local function render(tooltip, data)
   tooltip:AddLine(skillText, 0.86, 0.86, 0.86)
  elseif (entry and entry.nonSkinnable) or nonSkinnableEnemy(unit, guid) then
   if skin ~= false then tooltip:AddLine("Non dépeçable", 0.95, 0.30, 0.30) end
+ elseif skin == nil and matchingEnemy(unit, guid) then
+  tooltip:AddLine("Dépeçage inconnu", 0.80, 0.78, 0.72)
  end
 
  local items = {}

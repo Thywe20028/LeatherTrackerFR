@@ -1,3 +1,11 @@
+## 0.7.36
+
+- Revoit la grille des onglets et mémorise le composant, son filtre géographique, sa recherche, son défilement et le tri de Sources.
+- Affiche les objectifs incomplets en premier et propose de masquer les objectifs terminés dans Ma collecte.
+- Raccourcit les fiches Sources, déporte les détails au survol et permet d’ouvrir une zone documentée sans ajouter de repère.
+- Regroupe les Options, avec cases à cocher, sélection directe du mode carte et commande d’enregistrement local.
+- Ajuste les quantités du suivi compact et indique le statut inconnu dans l’infobulle des ennemis non documentés.
+
 ## 0.7.35
 
 - Exclut la fouille déjà ouverte et les fenêtres de récupération ambiguës du relevé de dépeçage.

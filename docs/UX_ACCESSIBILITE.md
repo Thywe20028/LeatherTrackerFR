@@ -33,3 +33,19 @@ Les commandes `/ltfr` restent utiles aux développeurs, mais l'usage normal doit
 ## Validation
 
 Tester à plusieurs résolutions et échelles UI, avec et sans MelloUI / Auctionator, en vérifiant que le panneau ne bloque jamais la fabrication native.
+
+## Refonte 0.7.36
+
+- La fenêtre Métiers garde son cadre natif. Fabrication referme le panneau et rend la main à la page métier.
+- La grille vise 18 px de marge, 12 à 17 px entre colonnes, environ 32 % pour le catalogue et 27 % pour les filtres de Sources. Les cartes Sources passent à une colonne sous 470 unités utiles. Les coordonnées et la provenance détaillée sont accessibles via Détails.
+- Ma collecte conserve les objectifs et affiche les incomplets en premier. Le réglage de masquage agit sur la liste des objectifs. La carte et le suivi compact ont leurs propres commandes.
+- Sources mémorise le dernier composant consulté, le tri et les filtres par composant. Les positions de défilement sont enregistrées en quittant la vue ou au rechargement. Voir la zone utilise un identifiant documenté et ne crée aucun repère.
+- Options sépare Suivi compact, Collecte, Carte, Apprentissage et Informations. L’interrupteur d’apprentissage agit sur les futures observations locales et conserve l’historique. Le diagnostic affiché est celui de la session.
+
+### Validation en jeu
+
+- Vérifier à plusieurs échelles UI la barre supérieure, les noms longs, les boutons de chaque objectif et le défilement des deux colonnes.
+- Réduire la largeur disponible et vérifier que Sources passe à une carte par rangée. Survoler Détails et tester un repère précis, puis une zone seule.
+- Interrompre une recherche pour revenir à Ma collecte. Revenir à Sources et faire `/reload` pour vérifier la restauration des réglages et des filtres.
+- Déplacer et verrouiller le suivi compact. Dépecer manuellement et vérifier que le diagnostic se met à jour sans produire de message automatique.
+- Vérifier séparément la visibilité du calque dans le panneau natif MelloUI et la restauration de Fabrication.
