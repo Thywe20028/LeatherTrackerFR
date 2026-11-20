@@ -1,3 +1,9 @@
+## 0.7.35
+
+- Exclut la fouille déjà ouverte et les fenêtres de récupération ambiguës du relevé de dépeçage.
+- Conserve les nouveaux échantillons par niveau de créature en plus du total historique.
+- Ajoute `/ltskindebug` et actualise la fiche Sources ouverte si le relevé la concerne.
+
 ## 0.7.34
 
 - Affiche le seuil natif ou la plus basse compétence relevée lors d’un dépeçage réussi, avec un libellé explicite.

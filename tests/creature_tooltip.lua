@@ -29,6 +29,7 @@ Enum = {TooltipDataType = {Unit = 2}}
 local render
 TooltipDataProcessor = {AddTooltipPostCall = function(_, callback) render = callback end}
 
+SlashCmdList = {}
 local addon = {}
 assert(loadfile("addon/ComponentData.lua"))("LeatherTrackerFR", addon)
 assert(loadfile("addon/CreatureTooltip.lua"))("LeatherTrackerFR", addon)
@@ -125,8 +126,8 @@ function GetLootSlotLink(slot) return "item:" .. lootItems[slot] end
 function GetLootSourceInfo() return lootGUID, 1 end
 function GetProfessionInfo(profession) return nil, nil, skill, nil, nil, nil, profession == 2 and 393 or 165 end
 level = 17
-gameEvent(nil, "UNIT_SPELLCAST_SENT", "player", "Créature", "cast1", 8613)
 gameEvent(nil, "LOOT_READY")
+gameEvent(nil, "UNIT_SPELLCAST_SENT", "player", "Créature", "cast1", 8613)
 assert(not LeatherTrackerFRDB.skinningObservations[876545])
 gameEvent(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast1", 8613)
 gameEvent(nil, "LOOT_OPENED")
@@ -139,6 +140,7 @@ local learned = LeatherTrackerFRDB.skinningObservations[876545]
 assert(learned.successes[17].samples == 1)
 assert(learned.loot.samples == 1 and learned.loot.name == "Créature")
 assert(learned.loot.drops[2318] == 1 and not learned.loot.drops[99999])
+gameEvent(nil, "LOOT_CLOSED")
 skill, corpseGUID = 85, "Creature-0-0-0-0-876545-0002"
 gameEvent(nil, "UNIT_SPELLCAST_SENT", "player", "Créature", "cast2", 8613)
 gameEvent(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast2", 8613)
@@ -146,9 +148,22 @@ gameEvent(nil, "LOOT_READY")
 assert(learned.successes[17].samples == 1)
 lootGUID = corpseGUID
 lootItems = {2934}
+gameEvent(nil, "LOOT_OPENED")
+assert(learned.loot.samples == 1) -- A later partial view cannot rehabilitate that window.
+gameEvent(nil, "LOOT_CLOSED")
 gameEvent(nil, "LOOT_READY")
 assert(learned.successes[17].samples == 2 and learned.successes[17].total == 150)
 assert(learned.loot.samples == 2 and learned.loot.drops[2318] == 1 and learned.loot.drops[2934] == 1)
+assert(learned.loot.byLevel[17].samples == 2 and learned.loot.byLevel[17].drops[2934] == 1)
+local report
+do
+ local originalPrint = print
+ print = function(message) report = message end
+ SlashCmdList.LEATHERTRACKERSKINDEBUG()
+ print = originalPrint
+end
+assert(report:find("fenêtre complète", 1, true))
+gameEvent(nil, "LOOT_CLOSED")
 corpseGUID = "Creature-0-0-0-0-876545-0000"
 unit(876545)
 assert(lines[3] == "Dépeçage : seuil inconnu / 85 · réussi à 65")
@@ -157,4 +172,16 @@ gameEvent(nil, "UNIT_SPELLCAST_FAILED", "player", "cast3", 8613)
 lootGUID = corpseGUID
 gameEvent(nil, "LOOT_READY")
 assert(learned.successes[17].samples == 2 and learned.loot.samples == 2)
+gameEvent(nil, "LOOT_CLOSED")
+gameEvent(nil, "UNIT_SPELLCAST_SENT", "player", "Créature", "cast4", 8613)
+gameEvent(nil, "UNIT_SPELLCAST_SUCCEEDED", "player", "cast4", 8613)
+function GetLootSlotLink() return nil end
+gameEvent(nil, "LOOT_READY")
+assert(learned.successes[17].samples == 2)
+gameEvent(nil, "LOOT_OPENED")
+assert(learned.successes[17].samples == 3 and learned.loot.samples == 2)
+assert(loadfile("addon/CreatureTooltip.lua"))("LeatherTrackerFR", addon)
+unit(876545)
+assert(lines[3] == "Dépeçage : seuil inconnu / 85 · réussi à 65")
+assert(LeatherTrackerFRDB.skinningObservations[876545].loot.byLevel[17].samples == 2)
 print("Infobulle de créature : données vérifiées, valeurs inconnues et survol des objets")

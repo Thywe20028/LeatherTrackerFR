@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.33"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.35"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -968,6 +968,12 @@ local function openCompactItem(id)
   if ok and opened ~= false then pendingItem, pendingTime = id, 4; return end
  end
  print("LeatherTracker : ouvre la fenêtre Métiers pour consulter ce composant.")
+end
+
+function addon.SkinningSourcesChanged(drops)
+ if panel and panel:IsVisible() and sourcesOpen and not optionsOpen and activeItem and drops[activeItem] then
+  pendingItemRefresh = true
+ end
 end
 
 refresh = function()

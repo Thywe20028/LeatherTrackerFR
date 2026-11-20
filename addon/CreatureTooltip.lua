@@ -178,6 +178,22 @@ end
 -- Pair the player's successful cast with the actual loot source GUID.
 -- Only sample loot windows that start after the successful cast.
 local pendingSkinning
+local lootWindowOpen = false
+local lastObservation
+SLASH_LEATHERTRACKERSKINDEBUG1 = "/ltskindebug"
+if SlashCmdList then
+ SlashCmdList.LEATHERTRACKERSKINDEBUG = function()
+  print("LeatherTracker — " .. (lastObservation or "Aucune tentative de dépeçage observée pendant cette session."))
+ end
+end
+
+local function recordSample(bucket, items)
+ bucket.samples = bucket.samples + 1
+ for itemID in pairs(items) do
+  bucket.drops[itemID] = (bucket.drops[itemID] or 0) + 1
+ end
+end
+
 local function finishSkinning()
  local attempt = pendingSkinning
  if not attempt.succeeded or not attempt.looted then return end
@@ -186,10 +202,17 @@ local function finishSkinning()
  if attempt.items then
   entry.loot = entry.loot or {samples = 0, drops = {}}
   entry.loot.name = attempt.name or entry.loot.name
-  entry.loot.samples = entry.loot.samples + 1
-  for itemID in pairs(attempt.items) do
-   entry.loot.drops[itemID] = (entry.loot.drops[itemID] or 0) + 1
+  recordSample(entry.loot, attempt.items)
+  if attempt.level then
+   entry.loot.byLevel = entry.loot.byLevel or {}
+   local bucket = entry.loot.byLevel[attempt.level] or {samples = 0, drops = {}}
+   entry.loot.byLevel[attempt.level] = bucket
+   recordSample(bucket, attempt.items)
   end
+  lastObservation = "Dépeçage et fenêtre complète enregistrés."
+  if addon.SkinningSourcesChanged then addon.SkinningSourcesChanged(entry.loot.drops) end
+ else
+  lastObservation = "Dépeçage confirmé. Objets incomplets, fenêtre exclue du taux."
  end
  if not attempt.level or not attempt.skill then return end
  entry.successes = entry.successes or {}
@@ -212,8 +235,16 @@ skinningEvents:RegisterEvent("LOOT_READY")
 skinningEvents:RegisterEvent("LOOT_OPENED")
 skinningEvents:RegisterEvent("LOOT_CLOSED")
 skinningEvents:SetScript("OnEvent", function(_, event, unit, a, b, spellID)
+ if event == "LOOT_READY" or event == "LOOT_OPENED" then
+  lootWindowOpen = true
+ elseif event == "LOOT_CLOSED" then
+  lootWindowOpen = false
+ end
  if event == "UNIT_SPELLCAST_SENT" then
-  pendingSkinning = nil
+  if pendingSkinning then
+   lastObservation = "Tentative précédente interrompue par un nouveau sort."
+   pendingSkinning = nil
+  end
   local spellName = C_Spell and C_Spell.GetSpellName or GetSpellInfo
   local skinningName = spellName and spellName(8613)
   if unit ~= "player" or not b or (spellID ~= 8613 and
@@ -227,25 +258,49 @@ skinningEvents:SetScript("OnEvent", function(_, event, unit, a, b, spellID)
    end
   end
   if next(candidates) then
-   pendingSkinning = {castGUID = b, skill = playerSkill(), candidates = candidates, time = GetTime()}
+   pendingSkinning = {
+    castGUID = b, skill = playerSkill(), candidates = candidates, time = GetTime(),
+    windowBeforeSuccess = lootWindowOpen,
+   }
+   lastObservation = "Tentative détectée. En attente du résultat et de la fenêtre de récupération."
+  else
+   lastObservation = "Tentative ignorée. Cadavre impossible à identifier."
   end
   return
  end
  local attempt = pendingSkinning
  if not attempt then return end
- if GetTime() - attempt.time > 8 then pendingSkinning = nil; return end
+ if GetTime() - attempt.time > 8 then
+  pendingSkinning = nil
+  lastObservation = "Tentative ignorée. Délai d’attribution dépassé."
+  return
+ end
  if event == "LOOT_CLOSED" then
   attempt.windowBeforeSuccess = nil
+  attempt.ambiguousWindow = nil
   return
  elseif event == "LOOT_READY" or event == "LOOT_OPENED" then
-  if not attempt.succeeded then attempt.windowBeforeSuccess = true; return end
-  if attempt.windowBeforeSuccess or not GetLootSourceInfo or not GetNumLootItems then return end
+  if not attempt.succeeded then attempt.windowBeforeSuccess = true end
+  if attempt.windowBeforeSuccess then
+   lastObservation = "Fenêtre ignorée. Elle était ouverte avant la confirmation du dépeçage."
+   return
+  end
+  if attempt.ambiguousWindow then return end
+  if not GetLootSourceInfo or not GetNumLootItems then
+   lastObservation = "Fenêtre ignorée. Origine des objets inaccessible."
+   return
+  end
   local matched, items, complete = nil, {}, true
   for slot = 1, GetNumLootItems() do
    local guid, quantity, extra = GetLootSourceInfo(slot)
    local candidate = creatureIDFromGUID(guid) and attempt.candidates[guid]
    -- Skip mixed or unidentifiable loot windows rather than bias the rate.
-   if not candidate or not quantity or extra ~= nil or (matched and matched ~= candidate) then return end
+   if not candidate or type(quantity) ~= "number" or quantity <= 0 or extra ~= nil
+    or (matched and matched ~= candidate) then
+    attempt.ambiguousWindow = true
+    lastObservation = "Fenêtre ignorée. Origine des objets différente ou ambiguë."
+    return
+   end
    matched = candidate
    local link = GetLootSlotLink and GetLootSlotLink(slot)
    local itemID = type(link) == "string" and tonumber(link:match("item:(%d+)"))
@@ -256,9 +311,15 @@ skinningEvents:SetScript("OnEvent", function(_, event, unit, a, b, spellID)
    attempt.looted, attempt.creatureID, attempt.level = true, matched.creatureID, matched.level
    attempt.name = matched.name
    attempt.items = complete and items or nil
+  else
+   lastObservation = "Fenêtre ignorée. Aucun objet attribuable au cadavre."
   end
  elseif unit == "player" and a == attempt.castGUID then
-  if event ~= "UNIT_SPELLCAST_SUCCEEDED" then pendingSkinning = nil; return end
+  if event ~= "UNIT_SPELLCAST_SUCCEEDED" then
+   pendingSkinning = nil
+   lastObservation = "Tentative ignorée. Dépeçage interrompu ou échoué."
+   return
+  end
   attempt.succeeded = true
  end
  finishSkinning()

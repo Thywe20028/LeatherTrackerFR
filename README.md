@@ -1,6 +1,6 @@
 # LeatherTracker FR
 
-Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.34**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
+Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.35**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
 
 ## Installation
 
@@ -49,3 +49,5 @@ py scripts/export_sources.py sources-validees.json addon/SourceData.lua
 ```
 
 Copier le fichier produit dans le dossier LeatherTrackerFR de WoW. Les sources initiales restent disponibles et le fichier généré les complète.
+
+`/ltskindebug` affiche la décision la plus récente sur l’apprentissage du dépeçage, sur demande.

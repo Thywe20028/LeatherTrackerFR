@@ -39,3 +39,11 @@ Références de conception
 - [GatherMate2 — Mémorisation des lieux de collecte](https://www.curseforge.com/wow/addons/gathermate2)
 - [Questie — Carte et suivi des objectifs](https://github.com/Questie/Questie)
 - [Jakob Nielsen, 2006 — Progressive Disclosure](https://www.nngroup.com/articles/progressive-disclosure/)
+
+### Validation 0.7.35 sur WoW Forever
+
+1. Fouiller normalement un cadavre. Vérifier qu'aucun relevé de dépeçage n'est ajouté.
+2. Fermer le butin, puis dépecer manuellement. Avec `/ltskindebug`, vérifier que la fenêtre complète est acceptée. Contrôler la fréquence personnelle dans Sources et la quantité en sac dans Ma collecte.
+3. Répéter sur un autre niveau de la même espèce. Les nouveaux compteurs sont conservés par niveau, avec un total historique affiché dans Sources.
+4. Faire `/reload`. Vérifier la présence du relevé et la compétence de réussite dans l'infobulle. Le diagnostic recommence à zéro à chaque session.
+5. Valider ces scénarios en jeu avant l'apprentissage des marchands ou l'ajout de lieux observés à MelloUI. Ajouter le masquage facultatif des objectifs terminés dans Ma collecte après validation de la mise à jour des sacs.
