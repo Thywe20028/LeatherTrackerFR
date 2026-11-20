@@ -215,11 +215,65 @@ local function recordSample(bucket, items)
  end
 end
 
+local function recordSkinningLocation(entry)
+ local map = C_Map
+ if not map or not map.GetBestMapForUnit or not map.GetPlayerMapPosition then return end
+ local mapID = map.GetBestMapForUnit("player")
+ if type(mapID) ~= "number" or mapID <= 0 then return end
+ local position = map.GetPlayerMapPosition(mapID, "player")
+ if not position or not position.GetXY then return end
+ local x, y = position:GetXY()
+ if type(x) ~= "number" or type(y) ~= "number" or not (x >= 0 and x <= 1 and y >= 0 and y <= 1)
+  or (x == 0 and y == 0) then return end
+ local gridX, gridY = math.floor(x * 200 + 0.5), math.floor(y * 200 + 0.5)
+ local key = ("%d:%d:%d"):format(mapID, gridX, gridY)
+ entry.locations = entry.locations or {}
+ local point = entry.locations[key]
+ if not point then
+  local info = map.GetMapInfo and map.GetMapInfo(mapID)
+  point = {mapID = mapID, x = gridX / 200, y = gridY / 200, zone = info and info.name, observations = 0}
+  entry.locations[key] = point
+ end
+ point.observations = point.observations + 1
+end
+
+function addon.ExportSkinningCreatures()
+ LeatherTrackerFRDB = LeatherTrackerFRDB or {}
+ local documented, observed, points = {}, {}, 0
+ for itemID, sources in pairs(addon.componentSources or {}) do
+  for _, source in ipairs(sources) do
+   if source.method == "Dépeçage" and source.creatureID then
+    documented[#documented + 1] = {creatureID = source.creatureID, name = source.name, itemID = itemID,
+     level = source.level, skill = source.skill, zone = source.zone, mapID = source.map,
+     x = source.x, y = source.y, approximate = source.approximate, tentative = source.tentative,
+     provenance = source.provenance, locationSource = source.locationSource}
+   end
+  end
+ end
+ for id, entry in pairs(LeatherTrackerFRDB.skinningObservations or {}) do
+  local row = {creatureID = id, name = entry.name or (entry.loot and entry.loot.name),
+   items = entry.loot and entry.loot.drops, requirements = {}, playerLocations = {}}
+  for level, skill in pairs(entry) do
+   if type(level) == "number" then row.requirements[level] = skill end
+  end
+  for _, point in pairs(entry.locations or {}) do
+   row.playerLocations[#row.playerLocations + 1] = point
+   points = points + 1
+  end
+  observed[#observed + 1] = row
+ end
+ LeatherTrackerFRDB.skinningExport = {format = 1, documented = documented, observed = observed}
+ return ("%d entrées documentées · %d créatures observées · %d positions de joueur. Fais /reload pour écrire la sauvegarde."):format(
+  #documented, #observed, points)
+end
+
 local function finishSkinning()
  local attempt = pendingSkinning
  if not attempt.succeeded or not attempt.looted then return end
  pendingSkinning = nil
  local entry = learnSkinning(attempt.creatureID)
+ entry.name = attempt.name or entry.name
+ pcall(recordSkinningLocation, entry)
  if attempt.items then
   entry.loot = entry.loot or {samples = 0, drops = {}}
   entry.loot.name = attempt.name or entry.loot.name

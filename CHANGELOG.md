@@ -1,3 +1,7 @@
+## 0.7.46
+
+- Ajoute /ltfr exportmobs pour exporter les sources de dépeçage documentées et les observations locales, avec la position approximative du joueur quand la carte la fournit.
+
 ## 0.7.45
 
 - Ajoute /ltfr export pour enregistrer les recettes du Travail du cuir, leurs ingrédients et leurs quantités dans les SavedVariables.

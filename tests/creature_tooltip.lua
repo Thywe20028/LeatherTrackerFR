@@ -116,6 +116,11 @@ assert(not LeatherTrackerFRDB.skinningObservations[876544])
 unit(876544, "Dépeçable", {{leftText = "Dépeçable"}})
 unit(876544)
 assert(lines[2] == "Dépeçable" and lines[3] == "Dépeçage : seuil inconnu / 144")
+C_Map = {
+ GetBestMapForUnit = function() return 1413 end,
+ GetPlayerMapPosition = function() return {GetXY = function() return 0.461, 0.365 end} end,
+ GetMapInfo = function() return {name = "Les Tarides"} end,
+}
 local gameEvent = frames[3].scripts.OnEvent
 local corpseGUID = "Creature-0-0-0-0-876545-0001"
 local lootGUID, skill, now = corpseGUID, 65, 100
@@ -141,6 +146,10 @@ gameEvent(nil, "LOOT_READY")
 gameEvent(nil, "LOOT_OPENED")
 local learned = LeatherTrackerFRDB.skinningObservations[876545]
 assert(learned.successes[17].samples == 1)
+assert(addon.ExportSkinningCreatures():find("1 positions", 1, true))
+assert(#LeatherTrackerFRDB.skinningExport.documented > 0)
+local point = learned.locations["1413:92:73"]
+assert(point.x == 0.46 and point.y == 0.365 and point.observations == 1)
 assert(learned.loot.samples == 1 and learned.loot.name == "Créature")
 assert(learned.loot.drops[2318] == 1 and not learned.loot.drops[99999])
 gameEvent(nil, "LOOT_CLOSED")
