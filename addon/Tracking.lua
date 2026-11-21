@@ -10,7 +10,7 @@ local function register()
  if tab or not loggedIn or not crafting then return end
  if type(InCombatLockdown) == "function" and InCombatLockdown() then return end
  tab = CreateFrame("Button", "LeatherTrackerFRProfessionTab", frame, "LargeSideTabButtonTemplate")
- tab.Icon:SetTexture("Interface\\Icons\\INV_Misc_LeatherScrap_02")
+ tab.Icon:SetTexture("Interface\\AddOns\\"..(addonName or "LeatherTrackerFR").."\\Media\\Logo.tga")
  tab.tooltipText = "LeatherTracker FR"
  tab:EnableMouse(true)
  tab:SetCustomOnMouseUpHandler(function(_, mouseButton, upInside)

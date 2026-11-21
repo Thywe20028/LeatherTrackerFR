@@ -1,11 +1,12 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.49"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.50"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
 local bagStock
 local nativePages, nativeHeader = {}, {}
-local logo = "Interface\\Icons\\INV_Misc_LeatherScrap_02"
+local media = "Interface\\AddOns\\"..(addonName or "LeatherTrackerFR").."\\Media\\"
+local logo = media.."Logo.tga"
 
 local sources = addon.componentSources
 
@@ -473,6 +474,19 @@ local function background(frame, red, green, blue)
  texture:SetColorTexture(red, green, blue, 0.97)
 end
 
+local function addButtonArt(control, name, text)
+ local icon = control:CreateTexture(nil, "ARTWORK")
+ icon:SetSize(16, 16)
+ icon:SetPoint("LEFT", 6, 0)
+ icon:SetTexture(media..name..".tga")
+ local caption = control:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+ caption:SetPoint("LEFT", 25, 0)
+ caption:SetPoint("RIGHT", -4, 0)
+ caption:SetWordWrap(false)
+ control:SetFontString(caption)
+ control:SetText(text)
+end
+
 local function categoryBand(parent, text, handler)
  local band = CreateFrame(handler and "Button" or "Frame", nil, parent)
  band:SetHeight(24)
@@ -499,7 +513,7 @@ local function categoryBand(parent, text, handler)
 end
 
 local function setBandExpanded(band, expanded)
- band.ToggleMark:SetTexture("Interface\\Minimap\\UI-Minimap-Zoom"..(expanded and "Out" or "In").."Button-Up")
+ band.ToggleMark:SetTexture(media..(expanded and "Moins" or "Plus")..".tga")
 end
 
 local function input(parent, width, max)
@@ -793,7 +807,9 @@ local function createPanel(frame)
   LeatherTrackerCloseCollection()
  end)
  title = label(panel, "GameFontNormalLarge", 20, -50)
- button(panel, "Fabrication", 110, LeatherTrackerCloseCollection):SetPoint("TOPRIGHT", -18, -7)
+ local fabrication = button(panel, "Fabrication", 110, LeatherTrackerCloseCollection)
+ fabrication:SetPoint("TOPRIGHT", -18, -7)
+ addButtonArt(fabrication, "Fabrication", "Fabrication")
  local catalog = CreateFrame("Frame", nil, panel)
  panel.Catalog = catalog
  catalog:SetPoint("TOPLEFT", 18, -45)
@@ -870,7 +886,7 @@ local function createPanel(frame)
   local icon = control:CreateTexture(nil, "OVERLAY")
   icon:SetSize(17, 18)
   icon:SetPoint("CENTER")
-  icon:SetTexture("Interface\\Buttons\\UI-SpellbookIcon-"..(direction < 0 and "Prev" or "Next").."Page-Up")
+  icon:SetTexture(media..(direction < 0 and "Gauche" or "Droite")..".tga")
   control.Arrow = icon
   return control
  end
@@ -934,6 +950,9 @@ local function createPanel(frame)
   refresh()
  end)
  panel.OptionsButton:SetPoint("LEFT", panel.CollectionTab, "RIGHT", 4, 0)
+ addButtonArt(panel.SourcesTab, "Sources", "Sources")
+ addButtonArt(panel.CollectionTab, "Collecte", "Ma collecte")
+ addButtonArt(panel.OptionsButton, "Options", "Options")
  for _, tab in ipairs({panel.SourcesTab, panel.CollectionTab, panel.OptionsButton}) do
   local underline = tab:CreateTexture(nil, "OVERLAY")
   underline:SetPoint("BOTTOMLEFT", 8, 2)

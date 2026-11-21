@@ -1,3 +1,7 @@
+## 0.7.50
+
+- Intègre le logo, les icônes de navigation et les textures de repli personnalisées.
+
 ## 0.7.49
 
 - Ajoute une recherche, un filtre des recettes apprises et des quantités par composant dans les recettes utilisatrices.
