@@ -1,3 +1,7 @@
+## 0.7.48
+
+- Complète les sources de trois composants prioritaires et ajoute une piste Classic pour l’écaille de scorpide épaisse.
+
 ## 0.7.47
 
 - Intègre les 591 recettes exportées par le client et complète le catalogue avec leurs ingrédients.

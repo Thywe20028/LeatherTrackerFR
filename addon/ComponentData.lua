@@ -311,6 +311,29 @@ sources[12810] = {
   context = "1 cuir robuste et 1 essence éternelle inférieure", provenance = "WoW Forever Tavern / wow-forever.gg"},
 }
 
+-- https://www.wowhead.com/forever/item=274030/malleable-essence-of-nature
+sources[274030] = {
+ {name = "Objets du sommet d’Hyjal ou de Barrow Deeps", method = "Désenchantement",
+  skill = "Enchantement", provenance = "Infobulle Forever (Wowhead)"},
+}
+-- https://www.wowhead.com/forever/item=249428/pristine-hide
+sources[249428] = {
+ {name = "Mister Graphed", method = "Achat", zone = "Riverglades",
+  context = "Powderfuse Port", provenance = "Wowhead Forever · fiche et témoignage"},
+ {name = "Shadetooth", method = "Dépeçage", zone = "Excavation Site: Wetlands",
+  provenance = "efficient.games · une observation"},
+}
+-- https://www.wowhead.com/forever/item=15408/heavy-scorpid-scale
+sources[15408] = {
+ {name = "Scorpides de Silithus", method = "Dépeçage", zone = "Silithus", continent = "Kalimdor",
+  context = "Piste Classic à confirmer dans Forever.", tentative = true, provenance = "ByteTavern · données Classic"},
+}
+-- https://www.wowhead.com/forever/item=7080/essence-of-water
+sources[7080] = {
+ {name = "Marchand des Profondeurs de Rochenoire", method = "Achat", zone = "Profondeurs de Rochenoire",
+  provenance = "Wowhead Forever · emplacement de vente"},
+}
+
 local componentGroups = {
  {name = "Cuirs et peaux", icon = 2318, items = {2934, 2318, 2319, 4234, 4304, 8170, 783, 4232, 4235, 8169, 4231, 4233, 4236, 5082, 249427}},
  {name = "Écailles", icon = 6470, items = {6470, 6471, 5784, 7286}},
