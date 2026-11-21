@@ -1,15 +1,15 @@
 # Identité graphique LeatherTracker FR
 
-| Textures | Dimensions stockées | Usage |
+Les textures sont extraites de la planche peinte validée. Le nettoyage conserve la forme principale, retire les pixels de fond et les halos isolés, puis adoucit d’un pixel la transition de l’alpha avant le redimensionnement. Chaque texture est carrée, avec le symbole centré et des marges régulières.
+
+| Textures dans `addon/Media/` | Fichier | Usage |
 | --- | --- | --- |
-| `Logo.tga` | 64 × 64 | Onglet LeatherTracker et portrait du panneau |
-| `Sources`, `Collecte`, `Fabrication`, `Options` | 32 × 32 | Navigation avec libellés conservés, affichage à 16 px |
-| `Gauche`, `Droite` | 32 × 32 | Navigation des composants Sources |
-| `Plus`, `Moins` | 32 × 32 | Bandeaux repliables |
-| Autres textures `Media/*.tga` | 32 × 32 | Kit graphique issu des planches validées, disponible pour les prochains usages |
+| Logo | `Logo.tga` | Onglet et en-tête LeatherTracker |
+| Navigation | `Collecte.tga`, `Sources.tga`, `Fabrication.tga`, `Options.tga` | À côté des libellés des onglets. Texte seul si la barre est étroite. |
+| Repères | `Recherche.tga`, `Filtre.tga`, `Recettes.tga`, `Suivi.tga` | Champs de recherche, titre des filtres, bandeau recettes, bouton Mes suivis |
+| Actions | `Gauche.tga`, `Droite.tga`, `Plus.tga`, `Moins.tga` | Navigation, replis et modification de la collecte |
+| Variantes de la planche | `Patron.tga`, `Peau.tga`, `FilAiguille.tga` | Extraites, disponibles dans le kit. |
 
-Les planches ont été découpées et redimensionnées individuellement. Les fonds extérieurs et les halos hors cadre ont été retirés. Les textures utilisent des TGA RGBA 32 bits et des dimensions en puissance de deux. Une texture 32 px peut être affichée à 24 px sans enregistrer un fichier TGA de largeur 24 px. Les matériaux, sorts et butins utilisent les icônes du client.
+Le logo est stocké en 64 × 64 et les autres textures en 32 × 32, au format TGA RGBA 32 bits. Les tailles 16, 24 et 32 px ont été contrôlées dans une planche sur fond sombre. Les composants, objets et recettes conservent leurs icônes de jeu quand elles existent.
 
-Vérifications locales : lecture des 28 textures, dimensions et présence d’alpha transparent. En jeu : contrôler à plusieurs échelles la lisibilité, les marges, le survol, les flèches et les boutons. L’affichage dans WoW Forever reste à confirmer.
-
-[Contraintes TGA du client](https://warcraft.wiki.gg/wiki/TGA_files)
+Les tests Lua couvrent notamment les actions de collecte, les flèches de navigation, la sélection d’une recette et le repli des filtres. Le rendu aux différentes échelles reste à vérifier dans WoW Forever. [Contraintes des textures TGA](https://warcraft.wiki.gg/wiki/TGA_files)

@@ -1,3 +1,7 @@
+## 0.7.52
+
+- Remplace le jeu d’icônes par les visuels peints validés. Ajoute les icônes de recherche, de filtres, de recettes et de suivi aux repères existants.
+
 ## 0.7.51
 
 - Élargit les boutons de navigation et conserve leurs libellés sur les panneaux étroits.

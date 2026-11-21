@@ -109,7 +109,7 @@ C_TradeSkillUI = {
 }
 local function button(text)
  for _, widget in ipairs(frames) do
-  if widget.text == text and widget:IsVisible() then
+  if (widget.text == text or rawget(widget, "ActionLabel") == text) and widget:IsVisible() then
    return rawget(widget, "checkControl") or widget
   end
  end
@@ -373,15 +373,15 @@ for _, row in ipairs(catalogue.rows) do
   result = row
  end
 end
-assert(result and result.Icon.texture == 102321 and result.Toggle.text == "+")
+assert(result and result.Icon.texture == 102321 and result.Toggle.ActionLabel == "+")
 result.Sources.scripts.OnClick()
 assert(collectionPanel.SourcePlaces:IsVisible() and not LeatherTrackerFRDB.collection.goals[2321])
 collectionPanel.CollectionTab.scripts.OnClick()
 assert(catalogue:IsVisible() and catalogue.Search:GetText() == "2321")
 result.Toggle.scripts.OnClick()
-assert(LeatherTrackerFRDB.collection.goals[2321] == 1 and result.Toggle.text == "−")
+assert(LeatherTrackerFRDB.collection.goals[2321] == 1 and result.Toggle.ActionLabel == "−")
 result.Toggle.scripts.OnClick()
-assert(not LeatherTrackerFRDB.collection.goals[2321] and result.Toggle.text == "+")
+assert(not LeatherTrackerFRDB.collection.goals[2321] and result.Toggle.ActionLabel == "+")
 result.Toggle.scripts.OnClick()
 local waypoint
 TomTom = {AddWaypoint = function(_, map, x, y) waypoint = {map, x, y}; return 1 end}
@@ -583,7 +583,7 @@ local function goalRow(id)
 end
 local function rowButton(row, text)
  for _, widget in ipairs(children[row]) do
-  if widget:GetText() == text then return widget end
+  if widget:GetText() == text or rawget(widget, "ActionLabel") == text then return widget end
  end
  error("Commande de ligne introuvable : "..text)
 end

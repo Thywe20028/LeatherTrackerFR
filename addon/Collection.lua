@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.51"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.52"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -489,6 +489,33 @@ local function addButtonArt(control, name, text)
  control.NavigationIcon, control.NavigationText = icon, caption
 end
 
+local function buttonGlyph(control, iconName, actionLabel, description)
+ if type(control.Glyph) ~= "table" and type(control.Glyph) ~= "userdata" then
+  local glyph = control:CreateTexture(nil, "OVERLAY")
+  glyph:SetSize(16, 16)
+  glyph:SetPoint("CENTER")
+  control.Glyph = glyph
+  control:SetScript("OnEnter", function(self)
+   if not GameTooltip then return end
+   GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+   GameTooltip:SetText(self.ActionDescription)
+   GameTooltip:Show()
+  end)
+  control:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+ end
+ control:SetText("")
+ control.Glyph:SetTexture(media..iconName..".tga")
+ control.ActionLabel, control.ActionDescription = actionLabel, description
+end
+
+local function leadingIcon(parent, name, x, y)
+ local icon = parent:CreateTexture(nil, "ARTWORK")
+ icon:SetSize(16, 16)
+ icon:SetPoint("TOPLEFT", x, y)
+ icon:SetTexture(media..name..".tga")
+ return icon
+end
+
 local function layoutNavigationButton(control, width, showIcon)
  control:SetWidth(width)
  control.NavigationIcon:SetShown(showIcon)
@@ -599,7 +626,10 @@ local function renderComponentCatalog()
  local query = componentSearchText(catalog.Search:GetText():match("^%s*(.-)%s*$"))
  local function updateToggle(row)
   local mark = collection.goals[row.item] and "−" or "+"
-  if row.Toggle:GetText() ~= mark then row.Toggle:SetText(mark) end
+  if row.Toggle.ActionLabel ~= mark then
+   buttonGlyph(row.Toggle, mark == "+" and "Plus" or "Moins", mark,
+    mark == "+" and "Ajouter à Ma collecte" or "Retirer de Ma collecte")
+  end
  end
  if catalog.renderedQuery == query and catalog.renderedRevision == catalogRevision then
   for index = 1, catalog.renderedRows do updateToggle(catalog.rows[index]) end
@@ -727,8 +757,12 @@ local function createRow(index)
   collection.goals[row.item] = quantity(goal + delta)
   refresh()
  end
- button(row, "−", 24, function() adjust(-1) end):SetPoint("RIGHT", row.goal, "LEFT", -4, 0)
- button(row, "+", 24, function() adjust(1) end):SetPoint("LEFT", row.goal, "RIGHT", 3, 0)
+ local minus = button(row, "", 24, function() adjust(-1) end)
+ minus:SetPoint("RIGHT", row.goal, "LEFT", -4, 0)
+ buttonGlyph(minus, "Moins", "−", "Diminuer l’objectif")
+ local plus = button(row, "", 24, function() adjust(1) end)
+ plus:SetPoint("LEFT", row.goal, "RIGHT", 3, 0)
+ buttonGlyph(plus, "Plus", "+", "Augmenter l’objectif")
  button(row, "Sources", 67, function()
   if currentGoal() then showItem(row.item) end
  end):SetPoint("BOTTOMRIGHT", -32, 13)
@@ -831,6 +865,8 @@ local function createPanel(frame)
  catalog.rows, catalog.headers = {}, {}
  local search = input(catalog, 1, 255)
  catalog.Search = search
+ leadingIcon(search, "Recherche", 4, -4)
+ search:SetTextInsets(23, 5, 0, 0)
  search:SetPoint("TOPLEFT", 10, -28)
  search:SetPoint("TOPRIGHT", -9, -28)
  search:SetScript("OnTextChanged", function()
@@ -873,6 +909,7 @@ local function createPanel(frame)
  end)
  panel.Back = button(panel, "<", 26, function() showItem(nil) end)
  panel.Back:SetPoint("TOPLEFT", 19, -44)
+ buttonGlyph(panel.Back, "Gauche", "<", "Retour à Ma collecte")
  panel.ItemIcon = panel:CreateTexture(nil, "ARTWORK")
  panel.ItemIcon:SetSize(27, 27)
  panel.ItemIcon:SetPoint("LEFT", panel.Back, "RIGHT", 6, 0)
@@ -913,6 +950,7 @@ local function createPanel(frame)
   picker.Scroll:SetVerticalScroll(0)
   refresh()
  end)
+ addButtonArt(pickerButton, "Suivi", "Mes suivis")
  panel.SourcePickerButton = pickerButton
  pickerButton:SetPoint("TOPRIGHT", -23, -46)
  panel.SourceNext:SetPoint("LEFT", title, "RIGHT", 5, 0)
@@ -1166,6 +1204,8 @@ local function createPanel(frame)
  end)
  recipeHeader:SetPoint("TOPLEFT", 7, 0)
  recipeHeader:SetPoint("TOPRIGHT", -7, 0)
+ leadingIcon(recipeHeader, "Recettes", 5, -4)
+ recipeHeader.Text:SetPoint("TOPLEFT", 25, -6)
  panel.SourceRecipes = recipeHeader
  panel.SourceRecipeRows = {}
  local function changeRecipePage(delta)
@@ -1175,6 +1215,8 @@ local function createPanel(frame)
  end
  panel.RecipePrevious = button(list, "<", 24, function() changeRecipePage(-1) end)
  panel.RecipeNext = button(list, ">", 24, function() changeRecipePage(1) end)
+ buttonGlyph(panel.RecipePrevious, "Gauche", "<", "Page de recettes précédente")
+ buttonGlyph(panel.RecipeNext, "Droite", ">", "Page de recettes suivante")
  panel.RecipeNative = button(list, "Voir dans Fabrication", 153, function()
   local state = sourceSelection[activeItem]
   local api = C_TradeSkillUI
@@ -1190,7 +1232,9 @@ local function createPanel(frame)
  local recipeSearch = input(list, 1, 80)
  recipeSearch:SetHeight(26)
  panel.RecipeSearch = recipeSearch
- local recipePlaceholder = label(recipeSearch, "GameFontDisableSmall", 5, -6)
+ leadingIcon(recipeSearch, "Recherche", 4, -4)
+ recipeSearch:SetTextInsets(23, 5, 0, 0)
+ local recipePlaceholder = label(recipeSearch, "GameFontDisableSmall", 23, -6)
  recipePlaceholder:SetText("Rechercher une recette par nom ou ID")
  panel.RecipePlaceholder = recipePlaceholder
  recipeSearch:SetScript("OnTextChanged", function(self)
@@ -1227,7 +1271,8 @@ local function createPanel(frame)
  places:SetWidth(190)
  places:Hide()
  background(places, 0.12, 0.095, 0.075)
- label(places, "GameFontNormal", 8, -7):SetText("Filtres des sources")
+ leadingIcon(places, "Filtre", 7, -4)
+ label(places, "GameFontNormal", 26, -7):SetText("Filtres des sources")
  local placeScroll = CreateFrame("ScrollFrame", nil, places, "UIPanelScrollFrameTemplate")
  placeScroll:SetPoint("TOPLEFT", 5, -27)
  placeScroll:SetPoint("BOTTOMRIGHT", -21, 5)
@@ -1257,6 +1302,8 @@ local function createPanel(frame)
  searchBar:Hide()
  local search = input(searchBar, 100, 90)
  panel.SourceSearch = search
+ leadingIcon(search, "Recherche", 4, -4)
+ search:SetTextInsets(23, 5, 0, 0)
  search:SetPoint("TOPLEFT", 8, 0)
  local sort = button(searchBar, "", 116, function()
   sortSourcesByRate = not sortSourcesByRate
@@ -1267,7 +1314,7 @@ local function createPanel(frame)
  panel.SourceSort = sort
  sort:SetPoint("TOPRIGHT", -2, 0)
  search:SetPoint("RIGHT", sort, "LEFT", -6, 0)
- local placeholder = label(search, "GameFontDisableSmall", 2, -6)
+ local placeholder = label(search, "GameFontDisableSmall", 23, -6)
  placeholder:SetText("Rechercher une source")
  search:SetScript("OnTextChanged", function(self)
   placeholder:SetShown(self:GetText() == "")
