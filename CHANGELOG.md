@@ -1,3 +1,9 @@
+## 0.7.47
+
+- Intègre les 591 recettes exportées par le client et complète le catalogue avec leurs ingrédients.
+- Ajoute /ltfr exportitems et /ltfr exportmissing pour les modes d’obtention.
+- Documente la Bobine de soie lourde et le Cuir enchanté.
+
 ## 0.7.46
 
 - Ajoute /ltfr exportmobs pour exporter les sources de dépeçage documentées et les observations locales, avec la position approximative du joueur quand la carte la fournit.

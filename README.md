@@ -1,6 +1,6 @@
 # LeatherTracker FR
 
-Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.46**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
+Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.47**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
 
 ## Installation
 
@@ -61,3 +61,5 @@ L’export contient les schémas de Travail du cuir que le client rend accessibl
 ### Exporter les créatures dépeçables
 
 `/ltfr exportmobs` enregistre `LeatherTrackerFRDB.skinningExport` dans le même fichier SavedVariables que les recettes après `/reload`. L’export distingue les sources intégrées et les observations locales. Les nouveaux dépeçages reconnus enregistrent la position du joueur sur une grille de 0,5 % de la carte, lorsque celle-ci est disponible. Les anciennes observations restent exportables avec les seules données déjà enregistrées.
+
+`/ltfr exportitems` enregistre les composants du catalogue de recettes avec leurs modes d’obtention. `/ltfr exportmissing` enregistre uniquement les composants sans méthode documentée, classés par nombre de recettes concernées. Après `/reload`, les deux exports sont disponibles dans `LeatherTrackerFR.lua` sous `materialSourcesExport` et `missingSourcesExport`.

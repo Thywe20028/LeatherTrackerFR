@@ -299,6 +299,18 @@ for id, price in pairs({[2320] = "10 pc", [2324] = "25 pc", [4289] = "50 pc", [4
  }}
 end
 
+-- https://foreverdb.net/fr/item/8343
+sources[8343] = {
+ {name = "Lorelae Wintersong", method = "Achat", zone = "Reflet-de-Lune", continent = "Kalimdor",
+  shop = "20 pa (relevé)", provenance = "ForeverDB.net"},
+}
+-- https://forever-tavern.com/items/12810-enchanted-leather/
+-- https://wow-forever.gg/db/spells/17181-enchanted-leather/
+sources[12810] = {
+ {name = "Cuir enchanté", method = "Fabrication", skill = "Enchantement",
+  context = "1 cuir robuste et 1 essence éternelle inférieure", provenance = "WoW Forever Tavern / wow-forever.gg"},
+}
+
 local componentGroups = {
  {name = "Cuirs et peaux", icon = 2318, items = {2934, 2318, 2319, 4234, 4304, 8170, 783, 4232, 4235, 8169, 4231, 4233, 4236, 5082, 249427}},
  {name = "Écailles", icon = 6470, items = {6470, 6471, 5784, 7286}},

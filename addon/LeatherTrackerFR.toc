@@ -2,13 +2,14 @@
 ## Title: LeatherTracker FR
 ## Notes: Panneau autonome de suivi du Travail du cuir pour WoW Forever.
 ## Author: Prototype communautaire
-## Version: 0.7.46
+## Version: 0.7.47
 ## SavedVariables: LeatherTrackerFRDB
 ## OptionalDeps: ForeverDB, MelloUI_Map
 Main.lua
 SourceData.lua
 WarcraftForeverData.lua
 ComponentData.lua
+RecipeSnapshot.lua
 CreatureTooltip.lua
 Collection.lua
 Tracking.lua

@@ -183,6 +183,9 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
  elseif action == "exportmobs" then
   print("LeatherTracker : "..(addon and addon.ExportSkinningCreatures and addon.ExportSkinningCreatures()
    or "Export indisponible. Vérifie que CreatureTooltip.lua est chargé."))
+ elseif action == "exportitems" or action == "exportmissing" then
+  print("LeatherTracker : "..(addon and addon.ExportMaterialSources and addon.ExportMaterialSources(action == "exportmissing")
+   or "Export indisponible. Vérifie que Collection.lua est chargé."))
  elseif action == "api" then show(status())
  elseif action == "debug" then show(debugInfo())
  elseif action == "scan" then show(scan())
@@ -191,7 +194,7 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
   show(id and readRecipe(id, "identifiant manuel") or "Syntaxe : /ltfr id 12345")
  elseif action == "refresh" then
   show(lastRecipeID and readRecipe(lastRecipeID, "derniere recette") or "Aucune recette precedente.")
- else show("Commandes : /ltfr scan | /ltfr export | /ltfr exportmobs | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
+ else show("Commandes : /ltfr scan | /ltfr export | /ltfr exportmobs | /ltfr exportitems | /ltfr exportmissing | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
 end
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")

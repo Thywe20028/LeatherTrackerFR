@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.46"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.47"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -31,6 +31,24 @@ local craftByItem = {}
 local scanLeatherworking
 local recipePageSize = 5
 
+local snapshotByItem, snapshotCraft = {}, {}
+for _, recipe in ipairs(addon.recipeSnapshot or {}) do
+ if recipe.output then
+  snapshotCraft[recipe.output] = snapshotCraft[recipe.output] or {}
+  table.insert(snapshotCraft[recipe.output], recipe)
+ end
+ local seen = {}
+ for _, slot in ipairs(recipe.slots) do
+  for _, id in ipairs(slot.items) do
+   if not seen[id] then
+    seen[id] = true
+    snapshotByItem[id] = snapshotByItem[id] or {}
+    table.insert(snapshotByItem[id], recipe)
+   end
+  end
+ end
+end
+
 local function catalogFor(id)
  local imported = addon.importedSources and addon.importedSources[id]
  local records, craft = {}, false
@@ -41,9 +59,9 @@ local function catalogFor(id)
   end
  end
  if not craft then
-  for _, recipe in ipairs(craftByItem[id] or {}) do
+  for _, recipe in ipairs(craftByItem[id] or snapshotCraft[id] or {}) do
    records[#records + 1] = {
-    name = recipe.name, method = "Fabrication", skill = "Travail du cuir", provenance = "Schéma de recette WoW Forever",
+    name = recipe.name, method = "Fabrication", skill = "Travail du cuir", provenance = craftByItem[id] and "Schéma de recette WoW Forever" or "Export de recettes WoW Forever",
    }
   end
  end
@@ -137,7 +155,7 @@ local function itemInfo(id)
   api.RequestLoadItemDataByID(id)
  end
  local catalogName = addon.warcraftForever and addon.warcraftForever.names[id]
- return name or catalogName or ("Objet #"..id), icon or "Interface\\Icons\\INV_Misc_QuestionMark"
+ return name or catalogName or (addon.recipeItemNames and addon.recipeItemNames[id]) or ("Objet #"..id), icon or "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
 local function scanBags()
@@ -1237,10 +1255,15 @@ local function openCompactItem(id)
 end
 
 local function recipeUses(item)
- local records, outputs = {}, {}
- for _, record in ipairs(recipesByItem[item] or {}) do
-  records[#records + 1] = record
-  if record.output then outputs[record.output] = true end
+ local records, outputs, ids = {}, {}, {}
+ for _, group in ipairs({recipesByItem[item] or {}, snapshotByItem[item] or {}}) do
+  for _, record in ipairs(group) do
+   if not ids[record.id] then
+    ids[record.id] = true
+    records[#records + 1] = record
+    if record.output then outputs[record.output] = true end
+   end
+  end
  end
  for _, definition in ipairs(addon.documentedRecipes or {}) do
   if not outputs[definition.output] then
@@ -2152,6 +2175,32 @@ function addon.ExportLeatherworkingRecipes()
   #records, skipped, unresolved)
 end
 
+function addon.ExportMaterialSources(onlyMissing)
+ if not collection then return "Ma collecte n’est pas initialisée." end
+ local ids, rows = {}, {}
+ for id in pairs(snapshotByItem) do ids[id] = true end
+ for id in pairs(recipesByItem) do ids[id] = true end
+ for id in pairs(ids) do
+  local methods, tentative = {}, {}
+  local records = catalogFor(id)
+  addLocalObservations(records, id)
+  addSkinningObservations(records, id)
+  for _, record in ipairs(records) do
+   local set = record.tentative and tentative or methods
+   if record.method ~= "Accès" then set[record.method] = true end
+  end
+  if not onlyMissing or not next(methods) then
+   local recipes = recipeUses(id)
+   rows[#rows + 1] = {id = id, name = itemInfo(id), recipeCount = #recipes,
+    methods = methods, tentativeMethods = tentative, sources = records}
+  end
+ end
+ table.sort(rows, function(a, b) return a.recipeCount == b.recipeCount and a.id < b.id or a.recipeCount > b.recipeCount end)
+ local key = onlyMissing and "missingSourcesExport" or "materialSourcesExport"
+ LeatherTrackerFRDB[key] = {format = 1, items = rows}
+ return ("%d composants enregistrés dans %s. Fais /reload pour écrire la sauvegarde."):format(#rows, key)
+end
+
 local function syncReagents()
  local visible = {}
  local frame = ProfessionsFrame
@@ -2260,6 +2309,9 @@ events:SetScript("OnEvent", function(_, event, id)
   sortSourcesByRate = collection.sortSourcesByRate == true
   collection.goals, collection.position = collection.goals or {}, collection.position or {}
   collection.recipeComponents = type(collection.recipeComponents) == "table" and collection.recipeComponents or {}
+  for id in pairs(snapshotByItem) do
+   if not indexedComponents[id] then indexRecipeOptions({{itemID = id}}) end
+  end
   for key in pairs(collection.recipeComponents) do
    local id = itemID(key)
    if id and not indexedComponents[id] then
