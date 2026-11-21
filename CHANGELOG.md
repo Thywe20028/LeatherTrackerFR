@@ -1,3 +1,8 @@
+## 0.7.51
+
+- Élargit les boutons de navigation et conserve leurs libellés sur les panneaux étroits.
+- Ajoute un diagnostic des relevés privés via /ltrecherche et /ltfr recherche.
+
 ## 0.7.50
 
 - Intègre le logo, les icônes de navigation et les textures de repli personnalisées.

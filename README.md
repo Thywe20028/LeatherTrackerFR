@@ -1,6 +1,6 @@
 # LeatherTracker FR
 
-Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.50**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
+Assistant de collecte pour **WoW Forever 1.60.1**, version **0.7.51**. LeatherTracker s’ouvre dans la fenêtre Métiers et conserve l’interface de fabrication de WoW.
 
 ## Installation
 

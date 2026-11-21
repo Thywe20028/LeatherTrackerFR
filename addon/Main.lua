@@ -171,6 +171,21 @@ local function openCollection()
  LeatherTrackerToggleCollection()
 end
 
+local function researchStatus(command)
+ local handler = SlashCmdList.LEATHERTRACKERRESEARCH
+ if type(handler) == "function" then handler(command or ""); return end
+ local registered = C_AddOns and C_AddOns.IsAddOnLoaded
+ local loaded = registered and registered("LeatherTrackerFRResearch")
+ if loaded then
+  print("LeatherTracker : le module privé est chargé, mais sa commande n’est pas enregistrée. Active les erreurs Lua et fais /reload.")
+ else
+  print("LeatherTracker : relevés privés non chargés. Installe et active les deux dossiers du ZIP privé, puis fais /reload.")
+ end
+end
+
+SLASH_LEATHERTRACKERRESEARCHHELP1 = "/ltrecherche"
+SlashCmdList.LEATHERTRACKERRESEARCHHELP = researchStatus
+
 SLASH_LEATHERTRACKERPANEL1 = "/ltpanel"
 SlashCmdList.LEATHERTRACKERPANEL = openCollection
 SLASH_LEATHERTRACKERFR1 = "/ltfr"
@@ -186,6 +201,7 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
  elseif action == "exportitems" or action == "exportmissing" then
   print("LeatherTracker : "..(addon and addon.ExportMaterialSources and addon.ExportMaterialSources(action == "exportmissing")
    or "Export indisponible. Vérifie que Collection.lua est chargé."))
+ elseif action == "recherche" then researchStatus(arg)
  elseif action == "api" then show(status())
  elseif action == "debug" then show(debugInfo())
  elseif action == "scan" then show(scan())
@@ -194,7 +210,7 @@ SlashCmdList.LEATHERTRACKERFR = function(msg)
   show(id and readRecipe(id, "identifiant manuel") or "Syntaxe : /ltfr id 12345")
  elseif action == "refresh" then
   show(lastRecipeID and readRecipe(lastRecipeID, "derniere recette") or "Aucune recette precedente.")
- else show("Commandes : /ltfr scan | /ltfr export | /ltfr exportmobs | /ltfr exportitems | /ltfr exportmissing | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
+ else show("Commandes : /ltfr scan | /ltfr export | /ltfr exportmobs | /ltfr exportitems | /ltfr exportmissing | /ltfr recherche | /ltfr api | /ltfr debug | /ltfr id NUMERO | /ltfr refresh\nOuvrez Travail du cuir et cliquez sur une recette.") end
 end
 frame:RegisterEvent("BAG_UPDATE_DELAYED")
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")

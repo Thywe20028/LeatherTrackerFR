@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.50"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.51"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -480,11 +480,22 @@ local function addButtonArt(control, name, text)
  icon:SetPoint("LEFT", 6, 0)
  icon:SetTexture(media..name..".tga")
  local caption = control:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+ control:SetText("")
  caption:SetPoint("LEFT", 25, 0)
  caption:SetPoint("RIGHT", -4, 0)
  caption:SetWordWrap(false)
  control:SetFontString(caption)
  control:SetText(text)
+ control.NavigationIcon, control.NavigationText = icon, caption
+end
+
+local function layoutNavigationButton(control, width, showIcon)
+ control:SetWidth(width)
+ control.NavigationIcon:SetShown(showIcon)
+ local caption = control.NavigationText
+ caption:ClearAllPoints()
+ caption:SetPoint("LEFT", showIcon and 25 or 5, 0)
+ caption:SetPoint("RIGHT", -5, 0)
 end
 
 local function categoryBand(parent, text, handler)
@@ -807,7 +818,7 @@ local function createPanel(frame)
   LeatherTrackerCloseCollection()
  end)
  title = label(panel, "GameFontNormalLarge", 20, -50)
- local fabrication = button(panel, "Fabrication", 110, LeatherTrackerCloseCollection)
+ local fabrication = button(panel, "Fabrication", 116, LeatherTrackerCloseCollection)
  fabrication:SetPoint("TOPRIGHT", -18, -7)
  addButtonArt(fabrication, "Fabrication", "Fabrication")
  local catalog = CreateFrame("Frame", nil, panel)
@@ -856,7 +867,7 @@ local function createPanel(frame)
  end)
  panel:SetScript("OnSizeChanged", function(_, width)
   catalog:SetWidth(math.max(120, (width - 64) * 0.30))
-  if panel.CompactControl then panel.CompactControl:SetWidth(width < 500 and 82 or 128) end
+  if panel.LayoutNavigation then panel.LayoutNavigation(width) end
   if panel.SourcePlaces then panel.SourcePlaces:SetWidth(math.max(120, (width - 64) * 0.30)) end
   pendingItemRefresh = true
  end)
@@ -953,6 +964,19 @@ local function createPanel(frame)
  addButtonArt(panel.SourcesTab, "Sources", "Sources")
  addButtonArt(panel.CollectionTab, "Collecte", "Ma collecte")
  addButtonArt(panel.OptionsButton, "Options", "Options")
+ panel.LayoutNavigation = function(width)
+  local showIcons = width >= 610
+  local compact = width < 525
+  local available = math.max(1, width - 157)
+  panel.CompactControl:SetWidth(compact and 76 or 128)
+  layoutNavigationButton(panel.SourcesTab, showIcons and 94 or 74, showIcons)
+  layoutNavigationButton(panel.CollectionTab, showIcons and 118 or 98, showIcons)
+  layoutNavigationButton(panel.OptionsButton, showIcons and 90 or 72, showIcons)
+  layoutNavigationButton(fabrication, 110, width >= 480)
+  -- On very narrow layouts, reduce only the spare width on the follow control.
+  if available < 330 then panel.CompactControl:SetWidth(68) end
+ end
+ panel.LayoutNavigation(panel:GetWidth())
  for _, tab in ipairs({panel.SourcesTab, panel.CollectionTab, panel.OptionsButton}) do
   local underline = tab:CreateTexture(nil, "OVERLAY")
   underline:SetPoint("BOTTOMLEFT", 8, 2)
@@ -1762,7 +1786,7 @@ refresh = function()
   sourceFooter:SetShown(showSource)
   panel.SourceLinkPopup:Hide()
   local compactLabel = collection.compact and "Masquer le suivi" or "Afficher le suivi"
-  if panel:GetWidth() < 500 then compactLabel = collection.compact and "Masquer" or "Afficher" end
+  if panel:GetWidth() < 525 then compactLabel = collection.compact and "Masquer" or "Afficher" end
   panel.CompactControl:SetText(compactLabel)
   if optionsOpen then refreshOptions() end
   scroll:ClearAllPoints()
