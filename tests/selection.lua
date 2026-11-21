@@ -257,7 +257,27 @@ assert(button("Ceinture en écailles de déviant").Status.text:find("Documentée
 local recipe = button("Recette de test 100")
 assert(recipe.Status.text:find("Apprise", 1, true) and recipe.Icon.texture)
 recipe.scripts.OnClick()
-assert(collectionPanel.RecipeIngredients.text:find("2 ×", 1, true))
+assert(collectionPanel.RecipeIngredients.text:find("Composants nécessaires", 1, true))
+local ingredientRow = collectionPanel.RecipeIngredientRows[1]
+assert(ingredientRow.item == 6471 and ingredientRow.Count.text == "4 / 2")
+assert(recipe.Amount.text == "× 2")
+assert(not collectionPanel.RecipeFollow.enabled)
+inBags = 1
+collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
+assert(ingredientRow.Count.text == "1 / 2" and not collectionPanel.RecipeFollow.enabled)
+LeatherTrackerFRDB.collection.goals[6471] = nil
+collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
+assert(collectionPanel.RecipeFollow.enabled)
+collectionPanel.RecipeFollow.scripts.OnClick()
+assert(LeatherTrackerFRDB.collection.goals[6471] == 2)
+LeatherTrackerFRDB.collection.goals[6471], inBags = 10, 4
+collectionEvents.OnEvent(nil, "BAG_UPDATE_DELAYED")
+local query = collectionPanel.RecipeSearch
+query:SetText("101")
+query.scripts.OnTextChanged(query)
+assert(button("Recette de test 101"):IsVisible())
+query:SetText("")
+query.scripts.OnTextChanged(query)
 button("Voir dans Fabrication").scripts.OnClick()
 assert(openedRecipe == 100 and not collectionPanel:IsVisible())
 tab.mouseUp(tab, "LeftButton", true)

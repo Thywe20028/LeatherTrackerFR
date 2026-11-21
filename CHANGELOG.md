@@ -1,3 +1,9 @@
+## 0.7.49
+
+- Ajoute une recherche, un filtre des recettes apprises et des quantités par composant dans les recettes utilisatrices.
+- Affiche les ingrédients et la progression de collecte. Le bouton Suivre les manquants conserve les objectifs plus élevés.
+- Distingue le bandeau des recettes utilisatrices de Comment obtenir ce composant.
+
 ## 0.7.48
 
 - Complète les sources de trois composants prioritaires et ajoute une piste Classic pour l’écaille de scorpide épaisse.

@@ -1,5 +1,5 @@
 local addonName, addon = ...
-local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.48"
+local version = C_AddOns and C_AddOns.GetAddOnMetadata and C_AddOns.GetAddOnMetadata(addonName, "Version") or "0.7.49"
 local events = CreateFrame("Frame")
 local collection, panel, list, scroll, compact, title, activeItem
 local rows, compactRows, reagentButtons = {}, {}, {}
@@ -1144,6 +1144,36 @@ local function createPanel(frame)
    print("LeatherTracker : cette recette n’a pas pu être ouverte dans Fabrication.")
   end
  end)
+ local recipeSearch = input(list, 1, 80)
+ recipeSearch:SetHeight(26)
+ panel.RecipeSearch = recipeSearch
+ local recipePlaceholder = label(recipeSearch, "GameFontDisableSmall", 5, -6)
+ recipePlaceholder:SetText("Rechercher une recette par nom ou ID")
+ panel.RecipePlaceholder = recipePlaceholder
+ recipeSearch:SetScript("OnTextChanged", function(self)
+  recipePlaceholder:SetShown(self:GetText() == "")
+  if panel.paintingRecipeSearch or not activeItem then return end
+  local state = sourceSelection[activeItem]
+  if not state then return end
+  state.recipeQuery, state.recipePage = self:GetText(), 1
+  refresh()
+ end)
+ recipeSearch:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+ panel.RecipeLearned = button(list, "", 102, function()
+  local state = sourceSelection[activeItem]
+  state.recipesLearnedOnly = not state.recipesLearnedOnly
+  state.recipePage = 1
+  refresh()
+ end)
+ panel.RecipeIngredientRows = {}
+ panel.RecipeFollow = button(list, "Suivre les manquants", 153, nil)
+ panel.RecipeChoiceHint = label(list, "GameFontHighlightSmall", 7, 0)
+ panel.RecipeChoiceHint:SetText("Choisis les alternatives et les composants non identifiés séparément.")
+ local result = CreateFrame("Button", nil, list)
+ result:SetSize(27, 27)
+ result.Icon = result:CreateTexture(nil, "ARTWORK")
+ result.Icon:SetAllPoints()
+ panel.RecipeOutput = result
  panel.RecipeIngredients = label(list, "GameFontHighlight", 7, 0)
  panel.RecipeIngredients:SetSpacing(3)
 
@@ -1281,10 +1311,125 @@ local function recipeUses(item)
  return records
 end
 
+local function recipeItemTooltip(row)
+ if not row.item or not GameTooltip then return end
+ GameTooltip:SetOwner(row, "ANCHOR_RIGHT")
+ if GameTooltip.SetItemByID then GameTooltip:SetItemByID(row.item)
+ else GameTooltip:SetHyperlink("item:"..row.item) end
+ GameTooltip:Show()
+end
+
+local function renderRecipeDetails(recipe, y)
+ local title = panel.RecipeIngredients
+ local result = panel.RecipeOutput
+ result.item = recipe.output
+ local _, icon
+ if recipe.output then _, icon = itemInfo(recipe.output) end
+ result.Icon:SetTexture(recipe.icon or icon or "Interface\\Icons\\INV_Misc_Book_09")
+ result:ClearAllPoints()
+ result:SetPoint("TOPLEFT", 7, -y)
+ result:SetScript("OnEnter", recipeItemTooltip)
+ result:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+ result:Show()
+ title:ClearAllPoints()
+ title:SetPoint("TOPLEFT", 41, -y)
+ title:SetPoint("TOPRIGHT", -7, -y)
+ title:SetText(recipe.name.."  •  Travail du cuir\nComposants nécessaires pour 1 fabrication")
+ title:Show()
+ y = y + math.max(32, title:GetStringHeight() or 0) + 5
+ local requirements, rowIndex, ambiguous = {}, 0, false
+ for _, slot in ipairs(recipe.slots) do
+  if not slot.optional then
+   if #slot.items == 1 then
+    local id = slot.items[1]
+    requirements[id] = (requirements[id] or 0) + slot.quantity
+   else
+    ambiguous = true
+   end
+  end
+  for index = 1, math.max(1, #slot.items) do
+   local id = slot.items[index]
+   rowIndex = rowIndex + 1
+   local row = panel.RecipeIngredientRows[rowIndex]
+   if not row then
+    row = CreateFrame("Button", nil, list)
+    row:SetHeight(30)
+    row:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
+    row.Icon = row:CreateTexture(nil, "ARTWORK")
+    row.Icon:SetSize(22, 22)
+    row.Icon:SetPoint("LEFT", 4, 2)
+    row.Name = label(row, "GameFontHighlight", 33, -3)
+    row.Name:SetPoint("TOPRIGHT", -69, -3)
+    row.Name:SetWordWrap(false)
+    row.Count = label(row, "GameFontHighlightSmall", 0, 0)
+    row.Count:ClearAllPoints()
+    row.Count:SetPoint("TOPRIGHT", -5, -3)
+    row.Progress = CreateFrame("StatusBar", nil, row)
+    row.Progress:SetPoint("BOTTOMLEFT", 33, 3)
+    row.Progress:SetPoint("BOTTOMRIGHT", -5, 3)
+    row.Progress:SetHeight(3)
+    row.Progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    row.Progress:SetMinMaxValues(0, 1)
+    row:SetScript("OnClick", function(self) if self.item then showItem(self.item) end end)
+    row:SetScript("OnEnter", recipeItemTooltip)
+    row:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+    panel.RecipeIngredientRows[rowIndex] = row
+   end
+   row.item = id
+   local name, icon
+   if id then name, icon = itemInfo(id) end
+   local owned = id and stock(id)
+   local prefix = slot.optional and "Facultatif · " or #slot.items > 1 and "Alternative · " or ""
+   row.Name:SetText(prefix..(name or "Composant non identifié"))
+   row.Icon:SetTexture(icon or "Interface\\Icons\\INV_Misc_QuestionMark")
+   row.Count:SetText(("%s / %d"):format(owned or "–", slot.quantity))
+   row.Progress:SetValue(owned and math.min(1, owned / slot.quantity) or 0)
+   row.Progress:SetStatusBarColor(0.37, owned and owned >= slot.quantity and 0.73 or 0.52, 0.30)
+   row:ClearAllPoints()
+   row:SetPoint("TOPLEFT", 7, -y)
+   row:SetPoint("TOPRIGHT", -7, -y)
+   row:Show()
+   y = y + 32
+  end
+ end
+ local follow = panel.RecipeFollow
+ local missing = false
+ for id, required in pairs(requirements) do
+  local owned = stock(id)
+  if owned and owned < required and (collection.goals[id] or 0) < required then missing = true; break end
+ end
+ follow:SetWidth(153)
+ follow:ClearAllPoints()
+ follow:SetPoint("TOPRIGHT", -7, -y)
+ follow:SetEnabled(missing)
+ follow:SetScript("OnClick", function()
+  for id, required in pairs(requirements) do
+   local owned = stock(id)
+   if owned and owned < required then collection.goals[id] = math.max(collection.goals[id] or 0, required) end
+  end
+  refresh()
+ end)
+ follow:Show()
+ if ambiguous then
+  panel.RecipeChoiceHint:ClearAllPoints()
+  panel.RecipeChoiceHint:SetPoint("TOPLEFT", 7, -y - 31)
+  panel.RecipeChoiceHint:SetPoint("TOPRIGHT", -7, -y - 31)
+  panel.RecipeChoiceHint:Show()
+  return y + 34 + math.max(14, panel.RecipeChoiceHint:GetStringHeight() or 0)
+ end
+ return y + 31
+end
+
 local function renderSourceRecipes(state, records)
  local header, rows = panel.SourceRecipes, panel.SourceRecipeRows
  local ingredients, native = panel.RecipeIngredients, panel.RecipeNative
  for _, row in ipairs(rows) do row:Hide() end
+ for _, row in ipairs(panel.RecipeIngredientRows) do row:Hide() end
+ panel.RecipeFollow:Hide()
+ panel.RecipeOutput:Hide()
+ panel.RecipeChoiceHint:Hide()
+ if not records or not state.recipesOpen or #records == 0 then panel.RecipeSearch:Hide() end
+ panel.RecipeLearned:Hide()
  panel.RecipePrevious:Hide()
  panel.RecipeNext:Hide()
  ingredients:Hide()
@@ -1302,11 +1447,46 @@ local function renderSourceRecipes(state, records)
   ingredients:Show()
   return 38 + math.max(14, ingredients:GetStringHeight() or 0)
  end
+ local availableLearned, matching = false, {}
+ for _, record in ipairs(records) do if record.learned == true then availableLearned = true; break end end
+ local query = componentSearchText((state.recipeQuery or ""):match("^%s*(.-)%s*$"))
+ for _, record in ipairs(records) do
+  if (not availableLearned or not state.recipesLearnedOnly or record.learned == true)
+   and (query == "" or tostring(record.id) == query or componentSearchText(record.name):find(query, 1, true)) then
+   matching[#matching + 1] = record
+  end
+ end
+ local search, learned = panel.RecipeSearch, panel.RecipeLearned
+ search:ClearAllPoints()
+ search:SetPoint("TOPLEFT", 7, -31)
+ search:SetPoint("TOPRIGHT", availableLearned and -114 or -7, -31)
+ if search:GetText() ~= (state.recipeQuery or "") then
+  panel.paintingRecipeSearch = true
+  search:SetText(state.recipeQuery or "")
+  panel.paintingRecipeSearch = false
+ end
+ panel.RecipePlaceholder:SetShown(search:GetText() == "")
+ search:Show()
+ learned:ClearAllPoints()
+ learned:SetPoint("TOPRIGHT", -7, -31)
+ learned:SetText(state.recipesLearnedOnly and "Apprises" or "Toutes")
+ learned:SetShown(availableLearned)
+ if #matching == 0 then
+  ingredients:ClearAllPoints()
+  ingredients:SetPoint("TOPLEFT", 7, -65)
+  ingredients:SetPoint("TOPRIGHT", -7, -65)
+  ingredients:SetText("Aucune recette ne correspond.")
+  ingredients:Show()
+  return 86
+ end
+ records = matching
  local pages = math.ceil(#records / recipePageSize)
  local page = math.min(pages, math.max(1, tonumber(state.recipePage) or 1))
  state.recipePage = page
  local first = (page - 1) * recipePageSize + 1
- local y, selected = 29, nil
+ local y, selected = 63, nil
+ local columns = list:GetWidth() >= 470 and 2 or 1
+ local width = (list:GetWidth() - 14 - (columns - 1) * 7) / columns
  for index = first, math.min(#records, first + recipePageSize - 1) do
   local record = records[index]
   local rowIndex = index - first + 1
@@ -1319,24 +1499,41 @@ local function renderSourceRecipes(state, records)
    row.Icon:SetSize(22, 22)
    row.Icon:SetPoint("LEFT", 4, 0)
    local name = label(row, "GameFontHighlight", 32, -1)
-   name:SetPoint("TOPRIGHT", -6, -1)
+   name:SetPoint("TOPRIGHT", -44, -1)
    name:SetWordWrap(false)
    row:SetFontString(name)
    row.Status = label(row, "GameFontHighlightSmall", 32, -15)
+   row.Status:SetPoint("TOPRIGHT", -40, -15)
+   row.Status:SetWordWrap(false)
+   row.Amount = label(row, "GameFontNormal", 0, 0)
+   row.Amount:ClearAllPoints()
+   row.Amount:SetPoint("RIGHT", -5, 0)
+   row:SetScript("OnEnter", recipeItemTooltip)
+   row:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
    rows[rowIndex] = row
   end
   row:ClearAllPoints()
-  row:SetPoint("TOPLEFT", 7, -y)
-  row:SetPoint("TOPRIGHT", -7, -y)
+  local column = (rowIndex - 1) % columns
+  row:SetPoint("TOPLEFT", 7 + column * (width + 7), -y)
+  row:SetWidth(width)
   row:SetText(record.name)
+  row.item = record.output
   local _, outputIcon
   if record.output then _, outputIcon = itemInfo(record.output) end
   row.Icon:SetTexture(record.icon or outputIcon or "Interface\\Icons\\INV_Misc_Book_09")
   local status = record.learned == true and "Apprise" or record.learned == false and "Non apprise"
    or record.documented and "Documentée · Warcraft Forever Wiki" or "Statut inconnu"
-  local count = 0
-  for _, slot in ipairs(record.slots) do if not slot.optional then count = count + 1 end end
-  row.Status:SetText(("%d composant(s) requis  •  %s"):format(count, status))
+  local amount, conditional = 0, false
+  for _, slot in ipairs(record.slots) do
+   for _, id in ipairs(slot.items) do
+    if id == activeItem then
+     amount = amount + slot.quantity
+     conditional = conditional or slot.optional or #slot.items > 1
+    end
+   end
+  end
+  row.Amount:SetText(("× %d%s"):format(amount, conditional and "*" or ""))
+  row.Status:SetText("Travail du cuir · "..status)
   row:SetScript("OnClick", function()
    state.recipeID = state.recipeID ~= record.id and record.id or nil
    refresh()
@@ -1348,7 +1545,7 @@ local function renderSourceRecipes(state, records)
    row:UnlockHighlight()
   end
   row:Show()
-  y = y + 31
+  if column == columns - 1 or index == math.min(#records, first + recipePageSize - 1) then y = y + 32 end
  end
  if pages > 1 then
   panel.RecipePrevious:SetPoint("TOPLEFT", 7, -y)
@@ -1360,20 +1557,9 @@ local function renderSourceRecipes(state, records)
   y = y + 29
  end
  if selected then
-  local lines = {}
-  for _, slot in ipairs(selected.slots) do
-   local choices = {}
-   for _, id in ipairs(slot.items) do choices[#choices + 1] = itemInfo(id) end
-   lines[#lines + 1] = ("%d × %s%s"):format(slot.quantity, #choices > 0 and table.concat(choices, " ou ") or "Composant non identifié",
-    slot.optional and " (facultatif)" or "")
-  end
-  ingredients:ClearAllPoints()
-  ingredients:SetPoint("TOPLEFT", 7, -y)
-  ingredients:SetPoint("TOPRIGHT", -7, -y)
-  ingredients:SetText(table.concat(lines, "\n"))
-  ingredients:Show()
-  y = y + math.max(#lines * 15, ingredients:GetStringHeight() or 0) + 5
+  y = renderRecipeDetails(selected, y)
   if selected.learned == true and C_TradeSkillUI and type(C_TradeSkillUI.OpenRecipe) == "function" then
+   native:ClearAllPoints()
    native:SetPoint("TOPLEFT", 7, -y)
    native:Show()
    y = y + 29
@@ -1592,7 +1778,7 @@ refresh = function()
    local selectedMethod = groups[selection.method] or groups.allMethods
    local methodMatches = {}
    for _, index in ipairs(selectedMethod and selectedMethod.indices or {}) do methodMatches[index] = true end
-   sourceHeading:SetText(selectedGroup and selectedGroup.key ~= "all" and selectedGroup.name or "Toutes les sources")
+   sourceHeading:SetText(selectedGroup and selectedGroup.key ~= "all" and ("Comment obtenir ce composant · "..selectedGroup.name) or "Comment obtenir ce composant")
    local places = panel.SourcePlaces
    selection.continentsFolded = selection.continentsFolded or {}
    local methodY, locationY = 26, nil
